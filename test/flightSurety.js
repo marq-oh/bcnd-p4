@@ -138,8 +138,6 @@ contract('Flight Surety Tests', async (accounts) => {
 
   it('Test that fifth and subsequent registered airlines requires multi-party consensus of 50% of registered airlines', async () => {
 
-    let result = false;
-
     // MSJ: Set up remaining test airlines
     let airline1 = accounts[3];
     let airline2 = accounts[4];    
@@ -174,6 +172,28 @@ contract('Flight Surety Tests', async (accounts) => {
     // MSJ: Assert
     assert.equal(queueCheck, true, "airline3 was in registration queue");
     assert.equal(registeredCheck, true, "airline3 was registered after getting 50% votes");
+  });
+
+  it('Test that passenger may pay up to 1 ether for purchasing flight insurance', async () => {
+
+    // MSJ: Set up
+    let passenger = accounts[6];    
+    let flight = "Air Udacity"; 
+    let airline = accounts[3];
+    let timestamp = 20200703;
+    const insuranceFee = web3.utils.toWei("1", "ether");
+
+      // MSJ: Register flight
+      await config.flightSuretyApp.registerFlight(flight,timestamp, {from: airline})
+
+    // MSJ: Buy insurance
+    await config.flightSuretyApp.buyInsurance(flight, airline,timestamp, {from: passenger, value: insuranceFee, gasPrice: 0})
+
+    // MSJ: Check if passenger is insured
+    let passengerInsured = await config.flightSuretyData.isInsured(passenger, airline, flight, timestamp);
+
+    // MSJ: Assert
+    assert.equal(passengerInsured, true, "passenger is insured after purchasing insurnace");
   });
 
 });
