@@ -70,6 +70,12 @@ contract FlightSuretyApp {
         _;  // All modifiers require an "_" which indicates where the function body will be added
     }
 
+    // MSJ: Modifier to verify contract owner
+    modifier requireContractOwner() {
+        require(msg.sender == contractOwner, "Caller is not contract owner");
+        _;
+    }
+
     // MSJ: Modifier to verify address is registered
     modifier requireIsAirlineRegistered(address airline) {
         require(flightSuretyData.isAirlineRegistered(airline) == true, 'Caller is not the authorized app contract');
@@ -85,6 +91,11 @@ contract FlightSuretyApp {
     /********************************************************************************************/
     /*                                       UTILITY FUNCTIONS                                  */
     /********************************************************************************************/
+
+    // MSJ: To check if contract isOperational()
+    function isOperational() external view returns(bool) {
+        return flightSuretyData.isOperational();
+    }
 
     // MSJ: Get list of registered airlines
     function getAirlinesRegistration() public view returns(address[] memory) 

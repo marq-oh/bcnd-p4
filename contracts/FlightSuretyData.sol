@@ -290,7 +290,12 @@ contract FlightSuretyData {
         emit FlightRegistered(flightKey, flight, timestamp, registerer);
 
     }
-    
+
+    function getFlightKey(address airline, string memory flight, uint256 timestamp) pure internal returns(bytes32)
+    {
+        return keccak256(abi.encodePacked(airline, flight, timestamp));
+    }
+
     // MSJ: Process Flight
     function processFlightStatus(address airline, string calldata flight, uint256 timestamp, uint8 statusCode) external requireIsOperational requireIsCallerAuthorized 
     {
@@ -326,11 +331,6 @@ contract FlightSuretyData {
                 emit InsureeCredited(insurance.passenger, amount);
             }
         }
-    }
-    
-    function getFlightKey(address airline, string memory flight, uint256 timestamp) pure internal returns(bytes32) 
-    {
-        return keccak256(abi.encodePacked(airline, flight, timestamp));
     }
     
     // MSJ: For passenger to buy insurance
