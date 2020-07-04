@@ -196,6 +196,19 @@ contract FlightSuretyData {
         return flights[flightkey].isRegistered;
     }
 
+    function _getFlightKey(address airline, string calldata flight, uint256 timestamp) external view returns(bytes32) 
+    {
+        return keccak256(abi.encodePacked(airline, flight, timestamp));
+    }
+
+    // MSJ: Update flight status code
+    function updateFlightStatusCode(bytes32 flightkey, uint8 statusCode) external 
+    {     
+       flights[flightkey].statusCode = statusCode;
+       
+       //return flights[flightkey].statusCode;
+    }
+
     // MSJ: Get flight status code
     function getFlightStatusCode(bytes32 flightkey) external view returns(uint8) 
     {     
@@ -299,16 +312,19 @@ contract FlightSuretyData {
     // MSJ: Process Flight
     function processFlightStatus(address airline, string calldata flight, uint256 timestamp, uint8 statusCode) external requireIsOperational requireIsCallerAuthorized 
     {
-
+        
         bytes32 flightKey = getFlightKey(airline, flight, timestamp);    
-    
+
+        // MSJ: If unknown status code, set it to the specified status code
         if (flights[flightKey].statusCode == STATUS_CODE_UNKNOWN) 
         {
             flights[flightKey].statusCode = statusCode;
-            if(statusCode == STATUS_CODE_LATE_AIRLINE) 
-            {
-                creditInsurees(airline, flight, timestamp);
-            }
+        }
+
+        // MSJ: If stauts code is late due to airline
+        if(flights[flightKey].statusCode == STATUS_CODE_LATE_AIRLINE) 
+        {
+            creditInsurees(airline, flight, timestamp);
         }
 
         emit FlightStatusUpdated(airline, flight, timestamp, statusCode);
@@ -326,7 +342,7 @@ contract FlightSuretyData {
             {
                 insurance.isCredited = true;
                 uint256 amount = insurance.amount.mul(insurance.multiplier).div(100);
-                pendingPayments[insurance.passenger] += amount;
+                pendingPayments[insurance.passenger] = amount;
 
                 emit InsureeCredited(insurance.passenger, amount);
             }

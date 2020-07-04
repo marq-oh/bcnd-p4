@@ -218,7 +218,7 @@ contract FlightSuretyApp {
         flightSuretyData.buy{value: msg.value}(msg.sender, flight, airline, timestamp, msg.value, INSURANCE_MULTIPLIER);    
     }
     
-    function processFlightStatus(address airline, string memory flight, uint256 timestamp, uint8 statusCode) internal {
+    function processFlightStatus(address airline, string calldata flight, uint256 timestamp, uint8 statusCode) external {
         flightSuretyData.processFlightStatus(airline, flight, timestamp, statusCode);
     }
 
@@ -326,7 +326,7 @@ contract FlightSuretyApp {
             emit FlightStatusInfo(airline, flight, timestamp, statusCode);
 
             // Handle flight status as appropriate
-            processFlightStatus(airline, flight, timestamp, statusCode);
+            flightSuretyData.processFlightStatus(airline, flight, timestamp, statusCode);
         }
     }
     

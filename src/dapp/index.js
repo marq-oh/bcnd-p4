@@ -31,7 +31,6 @@ import './flightsurety.css';
 
 })();
 
-
 function display(title, description, results) {
     let displayDiv = DOM.elid("display-wrapper");
     let section = DOM.section();

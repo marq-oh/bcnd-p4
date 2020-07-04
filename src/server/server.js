@@ -4,16 +4,11 @@ import Config from './config.json';
 import Web3 from 'web3';
 import express from 'express';
 
-
 let config = Config['localhost'];
 let web3 = new Web3(new Web3.providers.WebsocketProvider(config.url.replace('http', 'ws')));
 web3.eth.defaultAccount = web3.eth.accounts[0];
 let flightSuretyApp = new web3.eth.Contract(FlightSuretyApp.abi, config.appAddress);
 let flightSuretyData = new web3.eth.Contract(FlightSuretyData.abi, config.dataAddress);
-
-// MSJ: For Oracles
-const ORACLES_COUNT = 20;
-let oracles = [];
 
 // MSJ: Status codes
 const STATUS_CODE_UNKNOWN = 0;
@@ -31,52 +26,55 @@ const STATUS_CODES  = [
   STATUS_CODE_LATE_OTHER
 ];
 
+// MSJ: For Oracles
+const ORACLES_COUNT = 20;
+let oracles = [];
+
 // MSJ: Get random status code
 function getRandomStatusCode() {
   return STATUS_CODES[Math.floor(Math.random() * STATUS_CODES.length)];
 }
 
 // MSJ: To register Oracles
-web3.eth.getAccounts((error, accounts) => {
-  let owner = accounts[0];
-
-  // MSJ: Authorize app contract
-  flightSuretyData.methods.authorizeCaller(config.appAddress).send({from: owner}, (error, result) => {
-    if(error) 
-    {
-      console.log(error);
-    } 
-    else {
-      console.log(`Configured authorized caller: ${config.appAddress}`);
-    }
-  });
-
-  // MSJ: Oracle Registration
-  let fee = flightSuretyApp.methods.REGISTRATION_FEE().call({from: owner});
-
-  for(let a=0; a<ORACLES_COUNT; a++) 
-  {
-    flightSuretyApp.methods.registerOracle().send({from: accounts[a], value: fee, gas: 3000000}, (error, result) => {
-      if(error) 
-      {
-        console.log(error);
-      }
-      else 
-      {
-        flightSuretyApp.methods.getMyIndexes().call({from: accounts[a]}, (error, result) => {
-          if (error) {
-            console.log(error);
-          }
-          else {
-            let oracle = {address: accounts[a], index: result};
-            console.log(`Oracle: ${JSON.stringify(oracle)}`);
-            oracles.push(oracle);
-          }
-        });
-      }
+web3.eth.getAccounts().then((accounts) => { 
+  console.log("length :"+ accounts.length);
+  flightSuretyData.methods.authorizeCaller(config.appAddress)
+     .send({from: accounts[0]})
+     .then(result => {
+      console.log("appAddress registered as the authorized contract of dataContract");
+    })
+    .catch(error => {
+      console.log("Error in authorizing appcontract. " + error);
     });
-  };
+     flightSuretyApp.methods.REGISTRATION_FEE().call().then(fee => {
+      for(let a=1; a<ORACLES_COUNT; a++) {
+        flightSuretyApp.methods.registerOracle()
+        .send({ from: accounts[a], value: fee,gas:4000000 })
+        .then(result=>{
+          flightSuretyApp.methods.getMyIndexes().call({from: accounts[a]})
+          .then(indices =>{
+            oracles[accounts[a]] = indices;
+            console.log("Oracle registered: " + accounts[a] + " indices:" + indices);
+          })
+        }) 
+        .catch(error => {
+          console.log("Error while registering oracles: " + accounts[a] +  " Error: " + error);
+        });           
+      }
+     })
 });
+
+// MSJ: For Flight Status Info
+flightSuretyApp.events.FlightStatusInfo({
+  fromBlock: 0
+}, function (error, event) {
+  if (error) console.log(error)
+  else{
+    
+    console.log("Received flightstatusInfo event:  " + JSON.stringify(event));
+    }
+  }
+);
 
 // MSJ: For Oracle request
 flightSuretyApp.events.OracleRequest({fromBlock: 0}, function (error, event) {
@@ -113,5 +111,4 @@ app.get('/api', (req, res) => {
 })
 
 export default app;
-
 
