@@ -77,14 +77,10 @@ contract('Flight Surety Tests', async (accounts) => {
   it(`Test that first airline is registered and funded upon deployment`, async function () {
 
     // MSJ: Get first airline registered status data
-    let getAirlineRegisteredStatus = await config.flightSuretyData.isAirlineRegistered(config.owner, {
-        from: config.owner
-    });
+    let getAirlineRegisteredStatus = await config.flightSuretyData.isAirlineRegistered(config.owner);
 
     // MSJ: Get first airline funded status data
-    let getAirlineFundedStatus = await config.flightSuretyData.isAirlineFunded(config.owner, {
-        from: config.owner
-    });
+    let getAirlineFundedStatus = await config.flightSuretyData.isAirlineFunded(config.owner);
 
     // MSJ: Assert
     assert.equal(getAirlineRegisteredStatus, true, "First airline is not registered when contract is deployed")
@@ -106,12 +102,12 @@ contract('Flight Surety Tests', async (accounts) => {
     await config.flightSuretyApp.submitFunding({from: firstAirline, value: registrationFunding, gasPrice: 0})
 
     // MSJ: Verify status of firstAirline
-    let registeredStatus = await config.flightSuretyData.isAirlineRegistered.call(firstAirline);
-    let fundedStatus = await config.flightSuretyData.isAirlineFunded.call(firstAirline);
+    let registeredStatus = await config.flightSuretyData.isAirlineRegistered(firstAirline);
+    let fundedStatus = await config.flightSuretyData.isAirlineFunded(firstAirline);
 
     // MSJ: Try to register secondAirline using firstAirline before firstAirline submits funding
     await config.flightSuretyApp.registerAirline(secondAirline, {from: firstAirline});
-    let result = await config.flightSuretyData.isAirlineRegistered.call(secondAirline);
+    let result = await config.flightSuretyData.isAirlineRegistered(secondAirline);
 
     // MSJ: Assert
     assert.equal(registeredStatus, true, "Airline registerer has to be registered");
@@ -166,14 +162,14 @@ contract('Flight Surety Tests', async (accounts) => {
     //await config.flightSuretyApp.submitFunding({from: airline4, value: registrationFunding, gasPrice: 0})
 
     await config.flightSuretyApp.registerAirline(airline3, {from: config.owner});
-    let queueCheck = await config.flightSuretyApp.isAirlineQueued.call(airline3);
+    let queueCheck = await config.flightSuretyApp.isAirlineQueued(airline3);
 
     // MSJ: Registered + Funded airlines give 50% vote (i.e. 2) to Fifth Airline which allows it to be registered
     await config.flightSuretyApp.voteForAirline(airline3, {from: airline1});
 
     await config.flightSuretyApp.voteForAirline(airline3, {from: airline2});
 
-    let registeredCheck = await config.flightSuretyData.isAirlineRegistered.call(airline3);
+    let registeredCheck = await config.flightSuretyData.isAirlineRegistered(airline3);
 
     // MSJ: Assert
     assert.equal(queueCheck, true, "airline3 was in registration queue");
