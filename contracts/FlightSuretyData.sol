@@ -9,10 +9,10 @@ contract FlightSuretyData {
     /*                                       DATA VARIABLES                                     */
     /********************************************************************************************/
 
-    address private contractOwner; 
+    address private contractOwner;
     bool private operational = true;
     uint private balance;
-
+    
     // MSJ: Mapping contract address to authorizedContracts
     mapping(address => bool) private authorizedContracts;
 
@@ -30,12 +30,56 @@ contract FlightSuretyData {
     address[] airlinesRegistration = new address[](0);
     address[] airlinesRegisteredFunded = new address[](0);
 
+    // MSJ: Flight status codees
+    uint8 private constant STATUS_CODE_UNKNOWN = 0;
+    uint8 private constant STATUS_CODE_ON_TIME = 10;
+    uint8 private constant STATUS_CODE_LATE_AIRLINE = 20;
+    uint8 private constant STATUS_CODE_LATE_WEATHER = 30;
+    uint8 private constant STATUS_CODE_LATE_TECHNICAL = 40;
+    uint8 private constant STATUS_CODE_LATE_OTHER = 50;
+
+    // MSJ: Flights struct
+    struct Flight {
+        bool isRegistered;
+        uint8 statusCode;
+        uint256 updatedTimestamp;        
+        address airline;
+        string flight;
+    }
+    
+    // MSJ: Mapping bytes32 to flights
+    mapping(bytes32 => Flight) private flights;
+    
+    // MSJ: Bytes32 data to keep track of registered flights
+    bytes32[] registeredFlights = new bytes32[](0);
+
+    // MSJ: Insurance struct
+    struct Insurance {
+        address passenger;
+        uint256 timestamp;        
+        address airline;
+        string flight;
+        uint256 amount;
+        uint256 multiplier;
+        bool isCredited;
+    }
+    
+    // MSJ: Bytes32 data to keep track of insured passengers
+    mapping (bytes32 => Insurance[]) insuredPassengers;
+    mapping (address => uint) public pendingPayments;
+
     /********************************************************************************************/
     /*                                       EVENT DEFINITIONS                                  */
     /********************************************************************************************/
 
+    // MSJ: Events
     event AirlineRegistered(address registered, address registerer);
     event AirlineFunded(address funded);
+    event FlightRegistered(bytes32 flightKey, string flight, uint256 timestamp, address registerer);
+    event InsurancePurchased(address passenger, string flight, address airline, uint256 timestamp);
+    event FlightStatusUpdated(address airline, string flight, uint256 timestamp, uint8 statusCode);
+    event InsureeCredited(address passenger, uint256 amount);
+    event AccountWithdrawn(address passenger, uint256 amount);
 
     /********************************************************************************************/
     /*                                       CONSTRUCTOR                                        */
@@ -54,28 +98,30 @@ contract FlightSuretyData {
     /*                                       FUNCTION MODIFIERS                                 */
     /********************************************************************************************/
 
+    // MSJ: Modifier to check operating status
     modifier requireIsOperational() 
     {
         require(operational, "Contract is currently not operational");
         _;
     }
 
+    // MSJ: Modifier to check for contract owner
     modifier requireContractOwner()
     {
         require(msg.sender == contractOwner, "Caller is not contract owner");
         _;
     }
-
+    
     // MSJ: Modifier to only allow authorized contracts to call this contract
     modifier requireIsCallerAuthorized() {
         require(authorizedContracts[msg.sender] == true, 'Caller is not the authorized app contract');
         _;
     }
-
+    
     // MSJ: Modifier to only allow registered + funded airlines to register other airlines
-    modifier requireAirlineRegisteredFunded(address airline) {
-        require(airlines[airline].isRegistered == true, 'Airline Registerer is not registered');
-        require(airlines[airline].isFunded == true, 'Airline Registerer is not funded');
+    modifier requireAirlineRegisteredFunded(address registerer) {
+        require(airlines[registerer].isRegistered == true, 'Airline Registerer is not registered');
+        require(airlines[registerer].isFunded == true, 'Airline Registerer is not funded');
         _;
     }
 
@@ -138,6 +184,43 @@ contract FlightSuretyData {
         return airlinesRegisteredFunded;
     }
 
+    // MSJ: Get list of registered flights
+    function getRegisteredFlights() external view returns(bytes32[] memory) 
+    {
+        return registeredFlights;
+    }
+    
+    // MSJ: Function to verify flight is registered
+    function isFlightRegistered(bytes32 flightkey) external view returns(bool) 
+    {     
+        return flights[flightkey].isRegistered;
+    }
+
+    // MSJ: Get flight status code
+    function getFlightStatusCode(bytes32 flightkey) external view returns(uint8) 
+    {     
+        return flights[flightkey].statusCode;
+    }
+    
+    // MSJ: Function to check if passenger is insured
+    function isInsured(address passenger, address airline, string calldata flight, uint256 timestamp) external view returns (bool) {
+        Insurance[] memory insured = insuredPassengers[getFlightKey(airline, flight, timestamp)];
+        for(uint i = 0; i < insured.length; i++) 
+        {
+            if (insured[i].passenger == passenger) 
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    // MSJ: Function to get pending payment
+    function getPendingPayment(address passenger) external view returns (uint256)
+    {
+        return pendingPayments[passenger];
+    }
+
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
@@ -182,31 +265,114 @@ contract FlightSuretyData {
         return true;
     }
 
-   /**
-    * @dev Buy insurance for a flight
-    *
-    */   
-    function buy() external payable
+    // MSJ: Register Flight
+    function registerFlight(string calldata flight, uint256 timestamp, address registerer) external 
+             requireIsOperational
+             requireIsCallerAuthorized
+             requireAirlineRegisteredFunded(registerer)
     {
+        require(airlines[registerer].isRegistered == true, 'Airline not registered');
+        require(airlines[registerer].isFunded == true, 'Airline not funded');
 
-    }
+        bytes32 flightKey = getFlightKey(registerer, flight, timestamp);
+        require(!flights[flightKey].isRegistered, "Flight has already been registered");
+        
+        flights[flightKey] = Flight({
+          isRegistered: true,
+          statusCode: 0,
+          updatedTimestamp: timestamp,
+          airline: registerer,
+          flight: flight
+        });
 
-    /**
-     *  @dev Credits payouts to insurees
-    */
-    function creditInsurees() external pure
-    {
+        registeredFlights.push(flightKey); 
+
+        emit FlightRegistered(flightKey, flight, timestamp, registerer);
+
     }
     
-
-    /**
-     *  @dev Transfers eligible payout funds to insuree
-     *
-    */
-    function pay() external pure
+    // MSJ: Process Flight
+    function processFlightStatus(address airline, string calldata flight, uint256 timestamp, uint8 statusCode) external requireIsOperational requireIsCallerAuthorized 
     {
-    }
 
+        bytes32 flightKey = getFlightKey(airline, flight, timestamp);    
+    
+        if (flights[flightKey].statusCode == STATUS_CODE_UNKNOWN) 
+        {
+            flights[flightKey].statusCode = statusCode;
+            if(statusCode == STATUS_CODE_LATE_AIRLINE) 
+            {
+                creditInsurees(airline, flight, timestamp);
+            }
+        }
+
+        emit FlightStatusUpdated(airline, flight, timestamp, statusCode);
+    }
+    
+    function creditInsurees(address airline, string memory flight, uint256 timestamp) internal requireIsOperational requireIsCallerAuthorized 
+    {
+        bytes32 flightKey = getFlightKey(airline, flight, timestamp);
+
+        for (uint i = 0; i < insuredPassengers[flightKey].length; i++) 
+        {
+            Insurance memory insurance = insuredPassengers[flightKey][i];
+
+            if (insurance.isCredited == false) 
+            {
+                insurance.isCredited = true;
+                uint256 amount = insurance.amount.mul(insurance.multiplier).div(100);
+                pendingPayments[insurance.passenger] += amount;
+
+                emit InsureeCredited(insurance.passenger, amount);
+            }
+        }
+    }
+    
+    function getFlightKey(address airline, string memory flight, uint256 timestamp) pure internal returns(bytes32) 
+    {
+        return keccak256(abi.encodePacked(airline, flight, timestamp));
+    }
+    
+    // MSJ: For passenger to buy insurance
+    function buy(address passenger, string calldata flight, address airline, uint256 timestamp, uint256 amount, uint256 multiplier) external payable
+             requireIsOperational
+             requireIsCallerAuthorized
+             returns(bool)
+    {
+        bytes32 flightKey = getFlightKey(airline, flight, timestamp);
+        require(flights[flightKey].isRegistered == true, "Flight not registered");
+        require(airlines[airline].isRegistered == true, 'Airline not registered');
+        require(airlines[airline].isFunded == true, 'Airline not funded');
+
+        insuredPassengers[flightKey].push(Insurance({
+          passenger: passenger,
+          timestamp: timestamp,
+          airline: airline,
+          flight: flight,
+          amount: amount,
+          multiplier: multiplier,
+          isCredited: false
+        }));
+
+        
+        emit InsurancePurchased(passenger, flight, airline, timestamp);
+        return true;
+    }
+    
+    // MSJ: To transfer eligible payout
+    function pay(address passenger) external requireIsOperational requireIsCallerAuthorized 
+    {
+        require(passenger == tx.origin, "Contracts not allowed");
+        require(pendingPayments[passenger] > 0, "No fund available for withdrawal");
+
+        uint256 amount = pendingPayments[passenger];
+        pendingPayments[passenger] = 0;
+
+        address(uint160(passenger)).transfer(amount);
+
+        emit AccountWithdrawn(passenger, amount);
+    }
+    
     // MSJ: Function to fund contract
     function fund(uint256 amount) internal
     {
@@ -221,11 +387,6 @@ contract FlightSuretyData {
     // MSJ: Fallback
     receive() external payable {
         fund(msg.value);
-    }
-
-    function getFlightKey(address airline, string memory flight, uint256 timestamp) pure internal returns(bytes32) 
-    {
-        return keccak256(abi.encodePacked(airline, flight, timestamp));
     }
 
 }
