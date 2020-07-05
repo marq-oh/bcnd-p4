@@ -1,6 +1,6 @@
 pragma solidity ^0.6;
 
-import "https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-contracts/master/contracts/math/SafeMath.sol";
+import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 contract FlightSuretyApp {
     using SafeMath for uint256;
@@ -18,7 +18,7 @@ contract FlightSuretyApp {
      // MSJ: Constants
     uint256 constant AIRLINE_REG_FEE = 10 ether;
     uint256 constant MAX_FLIGHT_INSURANCE_PAY = 1 ether;
-    uint256 constant CREDIT_X = 150;
+    uint256 constant CREDIT_X = 1.5;
     uint8 private constant STATUS_CODE_UNKNOWN = 0;
     uint8 private constant STATUS_CODE_ON_TIME = 10;
     uint8 private constant STATUS_CODE_LATE_AIRLINE = 20;

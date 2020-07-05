@@ -1,6 +1,6 @@
 pragma solidity ^0.6;
 
-import "https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-contracts/master/contracts/math/SafeMath.sol";
+import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 contract FlightSuretyData {
     using SafeMath for uint256;
@@ -341,7 +341,7 @@ contract FlightSuretyData {
             if(insuredFlightKeyPassengers[insuredFlightKey[flightKey]].flightKey == flightKey)
             {
                 // MSJ: Add record to PendingPayments
-                uint256 amount = insuredFlightKeyPassengers[insuredFlightKey[flightKey]].amount * insuredFlightKeyPassengers[insuredFlightKey[flightKey]].credit_x;
+                uint256 amount = insuredFlightKeyPassengers[insuredFlightKey[flightKey]].amount.mul(insuredFlightKeyPassengers[insuredFlightKey[flightKey]].credit_x);
                 
                 pendingPaymentsFlightKeyPassengers.push(PendingPayments(
                                                             insuredFlightKeyPassengers[insuredFlightKey[flightKey]].passenger, 
