@@ -20,12 +20,58 @@
     </nav>
 
     <main class="container">
-
         <div id="display-wrapper" class="top-20">
         </div>
-        <div class="row top-20">
-            <label class="form">Flight</label> <input type="text" id="flight-number"> <btn class="btn btn-primary" id="submit-oracle">Submit to Oracles</btn>
+
+        <div class="row" style="height: 150px;">
+            <div class="col-sm-3"><label class="form">AUTHORIZE CALLER</label></div>
+            <div class="col-sm-3">
+                <input type="text" id="appContract" value="0x6238bF84bF028BC5b162A487c785b8026DE097B1">
+            </div>
+            <div class="col-sm-2">
+                <btn class="btn-sm btn-primary" id="authorize-caller-btn">AUTHORIZE</btn>
+            </div>
         </div>
+
+        <div class="row" style="height: 150px;">
+            <div class="col-sm-3"><label class="form">REGISTER FLIGHT</label></div>
+            <div class="col-sm-3">
+                <input type="text" id="flight1" value="WJ1699">
+                <input type="text" id="timestamp1" value="20200808">
+            </div>
+            <div class="col-sm-2">
+                <btn class="btn-sm btn-primary" id="register-flight-status-btn">REGISTER</btn>
+            </div>
+        </div>
+
+        <div class="row" style="height: 150px;">
+            <div class="col-sm-3"><label class="form">FLIGHT STATUS</label></div>
+            <div class="col-sm-3">
+                <input type="text" id="flight2" value="WJ1699">
+                <input type="text" id="airline2" value="0x0F797326D6FdB8B1b71fA18A95684a85B31f379B">
+                <input type="text" id="timestamp2" value="20200808">
+            </div>
+            <div class="col-sm-2">
+                <btn class="btn-sm btn-primary" id="fetch-flight-status-btn">FETCH</btn>
+            </div>
+        </div>
+        <div class="row" style="height: 150px;">
+            <div class="col-sm-3"><label class="form">INSURANCE</label></div>
+            <div class="col-sm-3">
+                <input type="text" id="flight3" value="WJ1699">
+                <input type="text" id="airline3" value="0x0F797326D6FdB8B1b71fA18A95684a85B31f379B">
+                <input type="text" id="timestamp3" value="20200808">
+            </div>
+            <div class="col-sm-2"><btn class="btn-sm btn-primary" id="purchase-insurance-btn">PURCHASE</btn></div>
+        </div>
+        <!--<div class="row" style="height: 150px;">
+            <div class="col-sm-6">
+                <label class="form">REGISTERED FLIGHTS</label>
+                <textarea class="form-control" id="flightsRegistered" cols="100%" rows="3"></textarea>
+            </div>
+            <div class="col-sm-2"><br /><br /><btn class="btn-sm btn-primary" id="flightsRegistered-btn">GET</btn></div>
+
+        </div>  -->     
     </main>
 
 </body>

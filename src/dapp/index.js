@@ -15,14 +15,49 @@ import './flightsurety.css';
             console.log(error,result);
             display('Operational Status', 'Check if contract is operational', [ { label: 'Operational Status', error: error, value: result} ]);
         });
-    
 
-        // User-submitted transaction
-        DOM.elid('submit-oracle').addEventListener('click', () => {
-            let flight = DOM.elid('flight-number').value;
+        // Authorize Caller
+        DOM.elid('authorize-caller-btn').addEventListener('click', () => {
+            let appContract = DOM.elid('appContract').value;
+
             // Write transaction
-            contract.fetchFlightStatus(flight, (error, result) => {
+            contract.authorizeCaller(appContract, (error, result) => {
+                display('Oracles', 'Trigger oracles', [ { label: 'Authorize Caller Status', error: error, value: result.appContract + ' ' + result.timestamp} ]);
+            });
+        })
+
+        // Register Flight
+        DOM.elid('register-flight-status-btn').addEventListener('click', () => {
+            let flight1 = DOM.elid('flight1').value;
+            let timestamp1 = DOM.elid('timestamp1').value;
+            
+            // Write transaction
+            contract.registerFlight(flight1, timestamp1, (error, result) => {
+                display('Oracles', 'Trigger oracles', [ { label: 'Register Flight Status', error: error, value: result.flight + ' ' + result.timestamp} ]);
+            });
+        })
+
+        // Fetch Flight Status
+        DOM.elid('fetch-flight-status-btn').addEventListener('click', () => {
+            let flight2 = DOM.elid('flight2').value;
+            let airline2 = DOM.elid('airline2').value;
+            let timestamp2 = DOM.elid('timestamp2').value;
+
+            // Write transaction
+            contract.fetchFlightStatus(flight2, airline2, timestamp2, (error, result) => {
                 display('Oracles', 'Trigger oracles', [ { label: 'Fetch Flight Status', error: error, value: result.flight + ' ' + result.timestamp} ]);
+            });
+        })
+
+        // Purchase Insurance
+        DOM.elid('purchase-insurance-btn').addEventListener('click', () => {
+            let flight3 = DOM.elid('flight3').value;
+            let airline3 = DOM.elid('airline3').value;
+            let timestamp3 = DOM.elid('timestamp3').value;
+
+            // Write transaction
+            contract.purchaseFlightInsurance(flight3, airline3, timestamp3, (error, result) => {
+                display('Oracles', 'Trigger oracles', [ { label: 'Purchase Insurance Status', error: error, value: result.flight + ' ' + result.timestamp} ]);
             });
         })
     

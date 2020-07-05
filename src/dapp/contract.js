@@ -37,7 +37,65 @@ export default class Contract {
     self.flightSuretyApp.methods.isOperational().call({ from: self.owner}, callback);
   }
 
-  fetchFlightStatus(flight, callback) {
+  authorizeCaller(appContract) {
+    
+    let self = this;
+    let payload = {
+      appContract: appContract
+    }
+    
+    self.flightSuretyData.methods.authorizeCaller(payload.appContract).send({from: self.owner}, (error, result) => {
+      if(error) {
+        console.log(error);
+      } 
+      else {
+        console.log("Configured authorized caller: " + payload.appContract);
+        console.log(payload);
+      }    
+    });
+  }
+
+  registerFlight(flight, timestamp, callback) {
+    
+    let self = this;
+    let payload = {
+      flight: flight,
+      timestamp: timestamp
+    }
+    alert(payload.flight);
+    alert(payload.timestamp);
+    alert(self.owner);
+    self.flightSuretyApp.methods.registerFlight(payload.flight, payload.timestamp).send({from: self.owner}, (error, result) => {
+      if(error) {
+        console.log(error);
+      } 
+      else {
+        console.log("Flight: " + payload.flight);
+        console.log("Timestamp: " + payload.timestamp);
+        console.log(payload);
+      }      
+    });
+  }
+
+  fetchFlightStatus(flight, airline, timestamp, callback) {
+    let self = this;
+    let payload = {
+      airline: airline,
+      flight: flight,
+      timestamp: timestamp
+    }
+    
+    self.flightSuretyApp.methods.fetchFlightStatus(payload.airline, payload.flight, payload.timestamp).send({from: self.owner}, (error, result) => {
+      if(error) {
+        console.log(error);
+      } 
+      else {
+        console.log(payload);
+      }      
+    });
+  }
+
+  /*fetchFlightStatus(flight, airline, timestamp, callback) {
     let self = this;
     let payload = {
       airline: self.airlines[0],
@@ -47,6 +105,27 @@ export default class Contract {
     
     self.flightSuretyApp.methods.fetchFlightStatus(payload.airline, payload.flight, payload.timestamp).send({from: self.owner}, (error, result) => {
       callback(error, payload);
+    });
+  }*/
+
+  purchaseFlightInsurance(flight, airline, timestamp, callback) {
+    let self = this;
+    let payload = {
+      airline: airline,
+      flight: flight,
+      timestamp: timestamp
+    }
+    
+    self.flightSuretyApp.methods.purchaseFlightInsurance(payload.flight, payload.airline, payload.timestamp).send({from: self.owner}, (error, result) => {
+      if(error) {
+        console.log(error);
+      } 
+      else {
+        console.log("Flight: " + payload.airline);
+        console.log("Flight: " + payload.flight);
+        console.log("Timestamp: " + payload.timestamp);
+        console.log(payload);
+      }      
     });
   }
 }
