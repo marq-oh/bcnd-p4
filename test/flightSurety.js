@@ -122,7 +122,7 @@ contract('Flight Surety Tests', async (accounts) => {
     let result = true;
     let registered = accounts[1]; // already registered from previous tests
 
-    // MSJ: Past 'already registered' account to registerAirline() on app contract
+    // MSJ: Pass 'already registered' account to registerAirline() on app contract
     try
     {
       await config.flightSuretyApp.registerAirline(registered, {from: config.owner});
@@ -188,89 +188,67 @@ contract('Flight Surety Tests', async (accounts) => {
     await config.flightSuretyApp.registerFlight(flight,timestamp, {from: airline})
 
     // MSJ: Buy insurance
-    await config.flightSuretyApp.buyInsurance(flight, airline,timestamp, {from: passenger, value: insuranceFee, gasPrice: 0})
+    await config.flightSuretyApp.purchaseFlightInsurance(flight, airline,timestamp, {from: passenger, value: insuranceFee, gasPrice: 0})
 
     // MSJ: Check if passenger is insured
     let passengerInsured = await config.flightSuretyData.isInsured(passenger, airline, flight, timestamp);
 
     // MSJ: Assert
-    assert.equal(passengerInsured, true, "passenger is insured after purchasing insurnace");
+    assert.equal(passengerInsured, true, "passenger is insured after purchasing insurance");
   });
 
-  it('Test oracles get registered', async () => {
+  it('Test 20 oracles get registered', async () => {
+    // MSJ: Setup
+    let oracles = [];
+
     // MSJ: Get fee
     let fee = await config.flightSuretyApp.REGISTRATION_FEE.call();
     
     // MSJ: Loop to register 20 Oracles
-    for(let a = 1; a < 20; a++) 
+    for(let a = 0; a < 20; a++) 
     {      
+      // console.log(accounts[a]);
       await config.flightSuretyApp.registerOracle({from: accounts[a], value: fee});
-      let result = await config.flightSuretyApp.getMyIndexes.call({from: accounts[a]});
+      await config.flightSuretyApp.getMyIndexes.call({from: accounts[a]});
+      oracles.push(accounts[a]);
     }
+
+    // MSJ: Assert
+    assert.equal(oracles.length, 20, "20 oracles registered");
   });
 
   it('Test oracles can request flight status', async () => {
-    // MSJ: Set up constants
-    const AIRLINE_FUNDING_VALUE = web3.utils.toWei("10", "ether");
-    const PASSENGER_INSURANCE_VALUE_1 = web3.utils.toWei("1", "ether");
-    const PASSENGER_INSURANCE_VALUE_2 = web3.utils.toWei("0.5", "ether");
-    const TIMESTAMP = Math.floor(Date.now() / 1000);
-    const STATUS_CODE_LATE_AIRLINE = 20;
-    const TEST_ORACLES_COUNT = 20;
-    const ORACLES_OFFSET = 20;
+    // MSJ: Set up
+    let passenger = accounts[6];    
+    let flight1 = "Udacity Galactic"; 
+    let flight2 = "Udacity Airlines"; 
+    let airline = accounts[3];
+    let timestamp1 = 20200709;
+    let timestamp2 = 20200709;
+    let eventEmitted = false;
+    let eventEmitted2 = false;
 
-    // MSJ: Set up airlines
-    let airline1 = accounts[2];
-    let airline2 = accounts[3];
-    let airline3 = accounts[4];
-    let airline4 = accounts[5];
-  
-    // MSJ: Set up Flights
-    let flight1 = {
-      airline: airline1,
-      flight: "Air Udacity", 
-      timestamp: TIMESTAMP
-    }
-    let flight2 = {
-      airline: airline1,
-      flight: "Udacity Airlines", 
-      timestamp: TIMESTAMP
-    }
-    let flight3 = {
-      airline: airline2,
-      flight: "Space Udacity", 
-      timestamp: TIMESTAMP
-    }
-    let flight4 = {
-      airline: airline3,
-      flight: "Udacity X",
-      timestamp: TIMESTAMP
-    } 
-
-    // MSJ: Set up Passengers
-    let passenger1 = accounts[10];
-    let passenger2 = accounts[11];
-  
-    let airline = flight2.airline;
-    let flight = flight2.flight;
-    let timestamp = flight2.timestamp;
+    // MSJ: Register flight
+    await config.flightSuretyApp.registerFlight(flight1, timestamp1, {from: airline})
+    await config.flightSuretyApp.registerFlight(flight2, timestamp2, {from: airline})
 
     // MSJ: Fetch flight status
-    await config.flightSuretyApp.fetchFlightStatus(airline, flight, timestamp);
-
-    for(let a = 1; a < 20; a++) {
-      // MSJ: Get oracle info
-      let oracleIndexes = await config.flightSuretyApp.getMyIndexes.call({from: accounts[a]});
-      for(let i = 0; i < 3; i++) {
-        try {
-          await config.flightSuretyApp.submitOracleResponse(oracleIndexes[i], airline, flight, timestamp, STATUS_CODE_LATE_AIRLINE, {from: accounts[a]});
-        }
-        catch(e) {
-          // Enable during debugging
-          // console.log('\nError', idx, oracleIndexes[i].toNumber(), flight, timestamp);
-        }
-      }
+    var event = await config.flightSuretyApp.fetchFlightStatus(airline, flight1, timestamp1);
+    
+    if(event)
+    {
+      eventEmitted = true;
     }
+    
+    var event2 = await config.flightSuretyApp.fetchFlightStatus(airline, flight2, timestamp2);
+    
+    if(event2)
+    {
+      eventEmitted2 = true;
+    }
+
+    assert.equal(eventEmitted, true, 'Invalid event emitted');
+    assert.equal(eventEmitted2, true, 'Invalid event emitted');
 
   });
 
@@ -283,23 +261,13 @@ contract('Flight Surety Tests', async (accounts) => {
     const insuranceFee = web3.utils.toWei("1", "ether");
 
     // MSJ: Buy insurance
-    await config.flightSuretyApp.buyInsurance(flight, airline,timestamp, {from: passenger, value: insuranceFee, gasPrice: 0})
+    await config.flightSuretyApp.purchaseFlightInsurance(flight, airline,timestamp, {from: passenger, value: insuranceFee, gasPrice: 0})
 
     // MSJ: Check if passenger is insured
     let passengerInsured = await config.flightSuretyData.isInsured(passenger, airline, flight, timestamp);
 
-    // MSJ: Get FlightKey
-    flightKey = await config.flightSuretyData._getFlightKey(airline, flight, timestamp)
-
     // MSJ: Simulate a flight status change to a late due to airline (StatusCode: 20)
-    await config.flightSuretyData.updateFlightStatusCode(flightKey, 20)
-
-    // MSJ: Confirm status code
-    let newStatusCode = await config.flightSuretyData.getFlightStatusCode(flightKey)
-    newStatusCode = Number(newStatusCode);
-
-    // MSJ: Process flight status (StatusCode: 20)
-    await config.flightSuretyApp.processFlightStatus(airline, flight, timestamp, newStatusCode, {from: config.owner})
+    await config.flightSuretyApp.processFlightStatus(airline, flight, timestamp, 20)
 
     // MSJ: Amount owned to insuredPassenger
     let amountOwed = insuranceFee * 1.5;
@@ -313,7 +281,7 @@ contract('Flight Surety Tests', async (accounts) => {
     // MSJ: Test payment / withdraw; Passenger has to go through pay process before receiving funds
     try 
     {
-      await config.flightSuretyApp.pay({from: passenger, gasPrice: 0});
+      await config.flightSuretyApp.withdrawFunds({from: passenger, gasPrice: 0});
     } 
     catch (e) 
     {
@@ -321,7 +289,7 @@ contract('Flight Surety Tests', async (accounts) => {
     }
 
     // MSJ: Assert: Amount Owned = PendingPayment
-    assert.equal(amountOwed, pendingPayment, "Amount incorrect");
+    assert.equal(amountOwed, pendingPaymentAmount, "Amount incorrect");
 
   });
 });
