@@ -1,6 +1,6 @@
 pragma solidity ^0.6;
 
-import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-contracts/master/contracts/math/SafeMath.sol";
 
 contract FlightSuretyData {
     using SafeMath for uint256;
@@ -20,15 +20,14 @@ contract FlightSuretyData {
     struct Airline {
         bool isRegistered;
         bool isFunded;
-        uint256 deposit;
     }
 
     // MSJ: Mapping the address of the airline with the airline's struct record
     mapping(address => Airline) private airlines;
 
     // MSJ: Array to keep track of registered + funded airlines
-    address[] airlinesRegistration = new address[](0);
-    address[] airlinesRegisteredFunded = new address[](0);
+    address[] airlinesRegistration;
+    address[] airlinesRegisteredFunded;
 
     // MSJ: Flight status codees
     uint8 private constant STATUS_CODE_UNKNOWN = 0;
@@ -42,7 +41,7 @@ contract FlightSuretyData {
     struct Flight {
         bool isRegistered;
         uint8 statusCode;
-        uint256 updatedTimestamp;        
+        uint256 timestamp;   
         address airline;
         string flight;
     }
@@ -51,22 +50,40 @@ contract FlightSuretyData {
     mapping(bytes32 => Flight) private flights;
     
     // MSJ: Bytes32 data to keep track of registered flights
-    bytes32[] registeredFlights = new bytes32[](0);
+    bytes32[] registeredFlights;
 
     // MSJ: Insurance struct
     struct Insurance {
         address passenger;
-        uint256 timestamp;        
-        address airline;
+        bytes32 flightKey;
         string flight;
+        address airline;
+        uint256 timestamp;        
         uint256 amount;
-        uint256 multiplier;
+        uint256 credit_x;
         bool isCredited;
     }
-    
-    // MSJ: Bytes32 data to keep track of insured passengers
-    mapping (bytes32 => Insurance[]) insuredPassengers;
-    mapping (address => uint) public pendingPayments;
+
+    // MSJ: Mappings
+    mapping (bytes32 => uint) private insuredFlightKey;
+    mapping (address => uint) private insuredPassenger;
+    Insurance[] insuredFlightKeyPassengers;
+
+    // MSJ: Pending Payments struct
+    struct PendingPayments {
+        address passenger;
+        bytes32 flightKey;
+        string flight;
+        address airline;
+        uint256 timestamp;        
+        uint256 amount;
+        bool isPaid;
+    }
+
+    // MSJ: Mappings
+    mapping (bytes32 => uint) private pendingPaymentFlightKey;
+    mapping (address => uint) private pendingPaymentPassenger;
+    PendingPayments[] pendingPaymentsFlightKeyPassengers;
 
     /********************************************************************************************/
     /*                                       EVENT DEFINITIONS                                  */
@@ -76,10 +93,9 @@ contract FlightSuretyData {
     event AirlineRegistered(address registered, address registerer);
     event AirlineFunded(address funded);
     event FlightRegistered(bytes32 flightKey, string flight, uint256 timestamp, address registerer);
-    event InsurancePurchased(address passenger, string flight, address airline, uint256 timestamp);
-    event FlightStatusUpdated(address airline, string flight, uint256 timestamp, uint8 statusCode);
+    event InsurancePurchased(address passenger, bytes32 flightKey, string flight, address airline, uint256 timestamp);
     event InsureeCredited(address passenger, uint256 amount);
-    event AccountWithdrawn(address passenger, uint256 amount);
+    event CreditsWithdrawn(address passenger, uint256 amount);
 
     /********************************************************************************************/
     /*                                       CONSTRUCTOR                                        */
@@ -216,24 +232,24 @@ contract FlightSuretyData {
     }
     
     // MSJ: Function to check if passenger is insured
-    function isInsured(address passenger, address airline, string calldata flight, uint256 timestamp) external view returns (bool) {
-        Insurance[] memory insured = insuredPassengers[getFlightKey(airline, flight, timestamp)];
-        for(uint i = 0; i < insured.length; i++) 
+    function isInsured(address passenger, address airline, string calldata flight, uint256 timestamp) external view returns (bool) 
+    {
+        bytes32 flightKey = getFlightKey(airline, flight, timestamp);
+        
+        if(insuredFlightKeyPassengers[insuredFlightKey[flightKey]].passenger == passenger)
         {
-            if (insured[i].passenger == passenger) 
-            {
-                return true;
-            }
+            return true;
         }
+        
         return false;
     }
     
     // MSJ: Function to get pending payment
     function getPendingPayment(address passenger) external view returns (uint256)
     {
-        return pendingPayments[passenger];
+        return pendingPaymentsFlightKeyPassengers[pendingPaymentPassenger[passenger]].amount;
     }
-
+    
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
@@ -251,8 +267,7 @@ contract FlightSuretyData {
 
         airlines[applicant] = Airline({
             isRegistered: true, 
-            isFunded: false,
-            deposit: 0
+            isFunded: false
         });
 
         airlinesRegistration.push(applicant); 
@@ -263,15 +278,15 @@ contract FlightSuretyData {
     }
 
     // MSJ: Fund Airline
-    function fundAirline(address airline) external payable
+    function submitAirlineFunding(address airline) external payable
              requireIsOperational
              requireIsCallerAuthorized
              returns(bool)
     {
+        // MSJ: Airline has to be registered
         require(airlines[airline].isRegistered == true, 'Airline not registered');
  
         airlines[airline].isFunded = true;
-        airlines[airline].deposit += msg.value;
         airlinesRegisteredFunded.push(airline); 
         
         emit AirlineFunded(airline);
@@ -284,19 +299,19 @@ contract FlightSuretyData {
              requireIsCallerAuthorized
              requireAirlineRegisteredFunded(registerer)
     {
+        // MSJ: Only registered + funded airlines can register
         require(airlines[registerer].isRegistered == true, 'Airline not registered');
         require(airlines[registerer].isFunded == true, 'Airline not funded');
 
+        // MSJ: Check that flight has not been registered yet
         bytes32 flightKey = getFlightKey(registerer, flight, timestamp);
-        require(!flights[flightKey].isRegistered, "Flight has already been registered");
+        require(flights[flightKey].isRegistered == false, "Flight has already been registered");
         
-        flights[flightKey] = Flight({
-          isRegistered: true,
-          statusCode: 0,
-          updatedTimestamp: timestamp,
-          airline: registerer,
-          flight: flight
-        });
+        flights[flightKey].flight = flight;
+        flights[flightKey].timestamp = timestamp;
+        flights[flightKey].airline = registerer;
+        flights[flightKey].isRegistered = true;
+        flights[flightKey].statusCode = STATUS_CODE_UNKNOWN;
 
         registeredFlights.push(flightKey); 
 
@@ -308,85 +323,74 @@ contract FlightSuretyData {
     {
         return keccak256(abi.encodePacked(airline, flight, timestamp));
     }
-
-    // MSJ: Process Flight
-    function processFlightStatus(address airline, string calldata flight, uint256 timestamp, uint8 statusCode) external requireIsOperational requireIsCallerAuthorized 
-    {
-        
-        bytes32 flightKey = getFlightKey(airline, flight, timestamp);    
-
-        // MSJ: If unknown status code, set it to the specified status code
-        if (flights[flightKey].statusCode == STATUS_CODE_UNKNOWN) 
-        {
-            flights[flightKey].statusCode = statusCode;
-        }
-
-        // MSJ: If stauts code is late due to airline
-        if(flights[flightKey].statusCode == STATUS_CODE_LATE_AIRLINE) 
-        {
-            creditInsurees(airline, flight, timestamp);
-        }
-
-        emit FlightStatusUpdated(airline, flight, timestamp, statusCode);
-    }
     
-    function creditInsurees(address airline, string memory flight, uint256 timestamp) internal requireIsOperational requireIsCallerAuthorized 
+    // MSJ: To credit all insurees for airline fault delay for applicable flight
+    function creditInsurees(address airline, string calldata flight, uint256 timestamp) external requireIsOperational requireIsCallerAuthorized 
     {
+        // MSJ: Check whether airlines is registered + funded
+        require(airlines[airline].isRegistered == true, 'Airline not registered');
+        require(airlines[airline].isFunded == true, 'Airline not funded');
+
+        // MSJ: Check whether flight is registered
         bytes32 flightKey = getFlightKey(airline, flight, timestamp);
-
-        for (uint i = 0; i < insuredPassengers[flightKey].length; i++) 
+        require(flights[flightKey].isRegistered == true, "Flight not registered");
+        
+        // MSJ: Loop through all insurees who purchased insurance for this flight
+        for (uint i = 0; i < insuredFlightKeyPassengers.length; i++)
         {
-            Insurance memory insurance = insuredPassengers[flightKey][i];
-
-            if (insurance.isCredited == false) 
+            if(insuredFlightKeyPassengers[insuredFlightKey[flightKey]].flightKey == flightKey)
             {
-                insurance.isCredited = true;
-                uint256 amount = insurance.amount.mul(insurance.multiplier).div(100);
-                pendingPayments[insurance.passenger] = amount;
-
-                emit InsureeCredited(insurance.passenger, amount);
+                // MSJ: Add record to PendingPayments
+                uint256 amount = insuredFlightKeyPassengers[insuredFlightKey[flightKey]].amount * insuredFlightKeyPassengers[insuredFlightKey[flightKey]].credit_x;
+                
+                pendingPaymentsFlightKeyPassengers.push(PendingPayments(
+                                                            insuredFlightKeyPassengers[insuredFlightKey[flightKey]].passenger, 
+                                                            insuredFlightKeyPassengers[insuredFlightKey[flightKey]].flightKey, 
+                                                            insuredFlightKeyPassengers[insuredFlightKey[flightKey]].flight, 
+                                                            insuredFlightKeyPassengers[insuredFlightKey[flightKey]].airline, 
+                                                            insuredFlightKeyPassengers[insuredFlightKey[flightKey]].timestamp, 
+                                                            amount,
+                                                            false));
+                
+                // MSJ: Update isCredited record
+                insuredFlightKeyPassengers[insuredFlightKey[flightKey]].isCredited = true;
+                emit InsureeCredited(insuredFlightKeyPassengers[insuredFlightKey[flightKey]].passenger, insuredFlightKeyPassengers[insuredFlightKey[flightKey]].amount);
             }
         }
     }
     
     // MSJ: For passenger to buy insurance
-    function buy(address passenger, string calldata flight, address airline, uint256 timestamp, uint256 amount, uint256 multiplier) external payable
+    function buy(address passenger, string calldata flight, address airline, uint256 timestamp, uint256 amount, uint256 credit_x) external payable
              requireIsOperational
              requireIsCallerAuthorized
              returns(bool)
-    {
-        bytes32 flightKey = getFlightKey(airline, flight, timestamp);
-        require(flights[flightKey].isRegistered == true, "Flight not registered");
+    {        
+        // MSJ: Check whether airlines is registered + funded
         require(airlines[airline].isRegistered == true, 'Airline not registered');
         require(airlines[airline].isFunded == true, 'Airline not funded');
 
-        insuredPassengers[flightKey].push(Insurance({
-          passenger: passenger,
-          timestamp: timestamp,
-          airline: airline,
-          flight: flight,
-          amount: amount,
-          multiplier: multiplier,
-          isCredited: false
-        }));
+        // MSJ: Check whether flight is registered
+        bytes32 flightKey = getFlightKey(airline, flight, timestamp);
+        require(flights[flightKey].isRegistered == true, "Flight not registered");
 
-        
-        emit InsurancePurchased(passenger, flight, airline, timestamp);
+        // MSJ: Add insured flightKey record
+        insuredFlightKeyPassengers.push(Insurance(passenger, flightKey, flight, airline, timestamp, amount, credit_x, false));
+
+        emit InsurancePurchased(passenger, flightKey, flight, airline, timestamp);
         return true;
     }
-    
-    // MSJ: To transfer eligible payout
-    function pay(address passenger) external requireIsOperational requireIsCallerAuthorized 
+
+    function pay(address payable passenger) external requireIsOperational requireIsCallerAuthorized
     {
-        require(passenger == tx.origin, "Contracts not allowed");
-        require(pendingPayments[passenger] > 0, "No fund available for withdrawal");
+        require(pendingPaymentsFlightKeyPassengers[pendingPaymentPassenger[passenger]].isPaid == false, "No eligible credits");
 
-        uint256 amount = pendingPayments[passenger];
-        pendingPayments[passenger] = 0;
-
-        address(uint160(passenger)).transfer(amount);
-
-        emit AccountWithdrawn(passenger, amount);
+        uint256 amount = pendingPaymentsFlightKeyPassengers[pendingPaymentPassenger[passenger]].amount;
+        
+        pendingPaymentsFlightKeyPassengers[pendingPaymentPassenger[passenger]].isPaid == true;
+        pendingPaymentsFlightKeyPassengers[pendingPaymentPassenger[passenger]].amount == 0;
+        
+        passenger.transfer(amount);
+        emit CreditsWithdrawn(passenger, amount);
     }
     
     // MSJ: Function to fund contract

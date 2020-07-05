@@ -1,6 +1,6 @@
 pragma solidity ^0.6;
 
-import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-contracts/master/contracts/math/SafeMath.sol";
 
 contract FlightSuretyApp {
     using SafeMath for uint256;
@@ -15,14 +15,16 @@ contract FlightSuretyApp {
     // MSJ: Account used to deploy contract
     address private contractOwner;
     
-     // MSJ: Airline registration fee
+     // MSJ: Constants
     uint256 constant AIRLINE_REG_FEE = 10 ether;
-    
-    // MSJ: Flight insurance fee
-    uint256 constant FLIGHT_INSURANCE_FEE = 1 ether;
-    
-    // MSJ: Insurance multiplier
-    uint256 constant INSURANCE_MULTIPLIER = 150;
+    uint256 constant MAX_FLIGHT_INSURANCE_PAY = 1 ether;
+    uint256 constant CREDIT_X = 150;
+    uint8 private constant STATUS_CODE_UNKNOWN = 0;
+    uint8 private constant STATUS_CODE_ON_TIME = 10;
+    uint8 private constant STATUS_CODE_LATE_AIRLINE = 20;
+    uint8 private constant STATUS_CODE_LATE_WEATHER = 30;
+    uint8 private constant STATUS_CODE_LATE_TECHNICAL = 40;
+    uint8 private constant STATUS_CODE_LATE_OTHER = 50;
 
     // MSJ: Airlines Registration Queue
     struct AirlineRegistrationQueue {
@@ -35,7 +37,7 @@ contract FlightSuretyApp {
     mapping(address => AirlineRegistrationQueue) private registrationQueue;
     
     // MSJ: Array to keep track of airline registration queue
-    address[] airlineRegQueue = new address[](0);
+    address[] airlineRegQueue;
     
     /********************************************************************************************/
     /*                                       EVENT DEFINITIONS                                  */
@@ -45,7 +47,7 @@ contract FlightSuretyApp {
     event AirlineRegistrationQueued(address queued, address registerer);
     event VotedForAirline(address voted, address voter);
     event FlightRegistered(string flight, uint256 timestamp, address airline);
-
+    event FlightStatusUpdated(address airline, string flight, uint256 timestamp, uint8 statusCode);
 
     /********************************************************************************************/
     /*                                       CONSTRUCTOR                                        */
@@ -191,12 +193,10 @@ contract FlightSuretyApp {
     // MSJ: For airline to submit registration funding so they can start participating
     function submitFunding() payable external 
     {
-        require(msg.value == AIRLINE_REG_FEE, "Incorrect funds value submitted");
-       
-        //require(address(this).balance > AIRLINE_REG_FEE, "Insufficient funds");
-        
+        require(msg.value == AIRLINE_REG_FEE, "Invalid funds submitted. Please submit required airline registration fee.");
+               
         // MSJ: Submit funding
-        flightSuretyData.fundAirline{value: msg.value}(msg.sender);
+        flightSuretyData.submitAirlineFunding{value: msg.value}(msg.sender);
     }
     
     // MSJ: For Airline to register flight
@@ -209,17 +209,13 @@ contract FlightSuretyApp {
 
     }
     
-    // MSJ: For passengers to buy insurance
-    function buyInsurance(string calldata flight, address airline, uint256 timestamp) payable external 
+    // MSJ: For passengers to purchase insurance
+    function purchaseFlightInsurance(string calldata flight, address airline, uint256 timestamp) payable external 
     {
-        require(msg.value > 0 && msg.value == FLIGHT_INSURANCE_FEE, "Incorrect funds value submitted");
+        require(msg.value > 0 && msg.value <= MAX_FLIGHT_INSURANCE_PAY, "Invalid funds submitted. Please adhere to insurance fee requirements.");
         
         // MSJ: Submit funding
-        flightSuretyData.buy{value: msg.value}(msg.sender, flight, airline, timestamp, msg.value, INSURANCE_MULTIPLIER);    
-    }
-    
-    function processFlightStatus(address airline, string calldata flight, uint256 timestamp, uint8 statusCode) external {
-        flightSuretyData.processFlightStatus(airline, flight, timestamp, statusCode);
+        flightSuretyData.buy{value: msg.value}(msg.sender, flight, airline, timestamp, msg.value, CREDIT_X);    
     }
 
     // Generate a request for oracles to fetch flight information
@@ -234,8 +230,8 @@ contract FlightSuretyApp {
         emit OracleRequest(index, airline, flight, timestamp);
     }
     
-    // MSJ: For transfer eligible payout funds to insured passengers
-    function pay() public requireIsOperational 
+    // MSJ: For insured passnenger to withdraw their eligible funds
+    function withdrawFunds() public payable requireIsOperational 
     {
         flightSuretyData.pay(msg.sender);
     }
@@ -321,13 +317,54 @@ contract FlightSuretyApp {
         // Information isn't considered verified until at least MIN_RESPONSES
         // oracles respond with the *** same *** information
         emit OracleReport(airline, flight, timestamp, statusCode);
-        if (oracleResponses[key].responses[statusCode].length >= MIN_RESPONSES) {
-
-            emit FlightStatusInfo(airline, flight, timestamp, statusCode);
-
+        if (oracleResponses[key].responses[statusCode].length >= MIN_RESPONSES) 
+        {
             // Handle flight status as appropriate
-            flightSuretyData.processFlightStatus(airline, flight, timestamp, statusCode);
+            // processFlightStatus(airline, flight, timestamp, statusCode);
+            emit FlightStatusInfo(airline, flight, timestamp, statusCode);
+    
+                // MSJ: Get FlightKey so that we can update flight status code based on what Oracle has sent
+            bytes32 flightKey = getFlightKey(airline, flight, timestamp);  
+    
+            // MSJ: Pass Oracle's updated Flight Status Code
+            flightSuretyData.updateFlightStatusCode(flightKey, statusCode);
+    
+            // MSJ: If unknown status code, request for Oracle to get another update
+            uint8 currStatusCode = flightSuretyData.getFlightStatusCode(flightKey);
+            require(currStatusCode != STATUS_CODE_UNKNOWN, "Flight Status Unknown. Please wait and request for another update.");
+    
+            // MSJ: If flight is late due to airline
+            if(currStatusCode == STATUS_CODE_LATE_AIRLINE) 
+            {
+                // MSJ: Credit all passengers who have purchased insurance for this flight
+                flightSuretyData.creditInsurees(airline, flight, timestamp);
+            }
+    
+            emit FlightStatusUpdated(airline, flight, timestamp, statusCode);
         }
+    }
+    
+    // MSJ: Called after oracle has updated flight status info (leave here in case)
+    function processFlightStatus(address airline, string calldata flight, uint256 timestamp, uint8 statusCode) external 
+    {    
+        // MSJ: Get FlightKey so that we can update flight status code based on what Oracle has sent
+        bytes32 flightKey = getFlightKey(airline, flight, timestamp);  
+
+        // MSJ: Pass Oracle's updated Flight Status Code
+        flightSuretyData.updateFlightStatusCode(flightKey, statusCode);
+
+        // MSJ: If unknown status code, request for Oracle to get another update
+        uint8 currStatusCode = flightSuretyData.getFlightStatusCode(flightKey);
+        require(currStatusCode != STATUS_CODE_UNKNOWN, "Flight Status Unknown. Please wait and request for another update.");
+
+        // MSJ: If flight is late due to airline
+        if(currStatusCode == STATUS_CODE_LATE_AIRLINE) 
+        {
+            // MSJ: Credit all passengers who have purchased insurance for this flight
+            flightSuretyData.creditInsurees(airline, flight, timestamp);
+        }
+
+        emit FlightStatusUpdated(airline, flight, timestamp, statusCode);
     }
     
     function getFlightKey(address airline, string memory flight, uint256 timestamp) pure internal returns(bytes32) 
@@ -378,17 +415,19 @@ contract FlightSuretyApp {
 // MSJ: FlightSurety data contract interface
 abstract contract FlightSuretyData {
     function isOperational() public virtual view returns(bool);
-    function registerAirline(address applicant, address registerer) external virtual; //returns(bool);
+    function registerAirline(address applicant, address registerer) external virtual;
     function getAirlinesRegistration() external virtual view returns(address[] memory);
     function getAirlinesFunded() external virtual view returns(address[] memory);
     function getAirlinesRegisteredFunded() external virtual view returns(address[] memory);
-    function fundAirline(address airline) external virtual payable returns(bool);
+    function submitAirlineFunding(address airline) external virtual payable returns(bool);
     function isAirlineRegistered(address airline) external virtual view returns(bool);
     function isAirlineFunded(address airline) external virtual view returns(bool);
     function registerFlight(string calldata flight, uint256 timestamp, address registerer) external virtual;
     function getRegisteredFlights() external virtual view returns(bytes32[] memory);
     function buy(address passenger, string calldata flight, address airline, uint256 timestamp, uint256 amount, uint256 multiplier) external virtual payable returns(bool);
-    function pay(address passenger) external virtual;
-    function processFlightStatus(address airline, string calldata flight, uint256 timestamp, uint8 statusCode) external virtual;
+    function pay(address passenger) external virtual payable;
+    function getFlightStatusCode(bytes32 flightkey) external virtual view returns(uint8);
+    function updateFlightStatusCode(bytes32 flightkey, uint8 statusCode) external virtual;
+    function creditInsurees(address airline, string calldata flight, uint256 timestamp) external virtual; 
 
 }
