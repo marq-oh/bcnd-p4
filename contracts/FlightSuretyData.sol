@@ -60,7 +60,6 @@ contract FlightSuretyData {
         address airline;
         uint256 timestamp;        
         uint256 amount;
-        uint256 credit_x;
         bool isCredited;
     }
 
@@ -341,7 +340,7 @@ contract FlightSuretyData {
             if(insuredFlightKeyPassengers[insuredFlightKey[flightKey]].flightKey == flightKey)
             {
                 // MSJ: Add record to PendingPayments
-                uint256 amount = insuredFlightKeyPassengers[insuredFlightKey[flightKey]].amount.mul(insuredFlightKeyPassengers[insuredFlightKey[flightKey]].credit_x);
+                uint256 amount = insuredFlightKeyPassengers[insuredFlightKey[flightKey]].amount.mul(150).div(100);
                 
                 pendingPaymentsFlightKeyPassengers.push(PendingPayments(
                                                             insuredFlightKeyPassengers[insuredFlightKey[flightKey]].passenger, 
@@ -360,7 +359,7 @@ contract FlightSuretyData {
     }
     
     // MSJ: For passenger to buy insurance
-    function buy(address passenger, string calldata flight, address airline, uint256 timestamp, uint256 amount, uint256 credit_x) external payable
+    function buy(address passenger, string calldata flight, address airline, uint256 timestamp, uint256 amount) external payable
              requireIsOperational
              requireIsCallerAuthorized
              returns(bool)
@@ -374,7 +373,7 @@ contract FlightSuretyData {
         require(flights[flightKey].isRegistered == true, "Flight not registered");
 
         // MSJ: Add insured flightKey record
-        insuredFlightKeyPassengers.push(Insurance(passenger, flightKey, flight, airline, timestamp, amount, credit_x, false));
+        insuredFlightKeyPassengers.push(Insurance(passenger, flightKey, flight, airline, timestamp, amount, false));
 
         emit InsurancePurchased(passenger, flightKey, flight, airline, timestamp);
         return true;

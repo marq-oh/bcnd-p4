@@ -18,7 +18,6 @@ contract FlightSuretyApp {
      // MSJ: Constants
     uint256 constant AIRLINE_REG_FEE = 10 ether;
     uint256 constant MAX_FLIGHT_INSURANCE_PAY = 1 ether;
-    uint256 constant CREDIT_X = 1.5;
     uint8 private constant STATUS_CODE_UNKNOWN = 0;
     uint8 private constant STATUS_CODE_ON_TIME = 10;
     uint8 private constant STATUS_CODE_LATE_AIRLINE = 20;
@@ -215,7 +214,7 @@ contract FlightSuretyApp {
         require(msg.value > 0 && msg.value <= MAX_FLIGHT_INSURANCE_PAY, "Invalid funds submitted. Please adhere to insurance fee requirements.");
         
         // MSJ: Submit funding
-        flightSuretyData.buy{value: msg.value}(msg.sender, flight, airline, timestamp, msg.value, CREDIT_X);    
+        flightSuretyData.buy{value: msg.value}(msg.sender, flight, airline, timestamp, msg.value);    
     }
 
     // Generate a request for oracles to fetch flight information
@@ -424,7 +423,7 @@ abstract contract FlightSuretyData {
     function isAirlineFunded(address airline) external virtual view returns(bool);
     function registerFlight(string calldata flight, uint256 timestamp, address registerer) external virtual;
     function getRegisteredFlights() external virtual view returns(bytes32[] memory);
-    function buy(address passenger, string calldata flight, address airline, uint256 timestamp, uint256 amount, uint256 multiplier) external virtual payable returns(bool);
+    function buy(address passenger, string calldata flight, address airline, uint256 timestamp, uint256 amount) external virtual payable returns(bool);
     function pay(address passenger) external virtual payable;
     function getFlightStatusCode(bytes32 flightkey) external virtual view returns(uint8);
     function updateFlightStatusCode(bytes32 flightkey, uint8 statusCode) external virtual;
