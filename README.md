@@ -11,7 +11,18 @@ To install, download or clone the repo, then:
 `npm install`
 `truffle compile`
 
-(Note: The code relies on v0.6 of SafeMath.sol: https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-contracts/master/contracts/math/SafeMath.sol. After you run 'npm' install, you may need to manually update the file in the 'node_modules' folder (node_modules\openzeppelin-solidity\contracts\math))
+### In case of `truffle compile` issues
+1. The code relies on v0.6 of SafeMath.sol: https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-contracts/master/contracts/math/SafeMath.sol. After you run 'npm' install, you may need to manually update the file in the 'node_modules' folder (node_modules\openzeppelin-solidity\contracts\math))
+2. Make sure that all web3 and webpack folders are installed properly in the node_modules folder  after running 'npm install'
+3. Make sure that you have a `.babelrc` folder in the root folder with the following content:
+
+`{
+  "presets": ["@babel/env"],
+  "plugins": [
+    "@babel/plugin-proposal-object-rest-spread",
+    "@babel/plugin-proposal-class-properties"
+  ]
+}`
 
 ## Develop Client
 
