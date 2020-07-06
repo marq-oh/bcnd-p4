@@ -211,7 +211,7 @@ contract FlightSuretyData {
         return flights[flightkey].isRegistered;
     }
 
-    function _getFlightKey(address airline, string calldata flight, uint256 timestamp) external view returns(bytes32) 
+    function _getFlightKey(address airline, string calldata flight, uint256 timestamp) external pure returns(bytes32) 
     {
         return keccak256(abi.encodePacked(airline, flight, timestamp));
     }
