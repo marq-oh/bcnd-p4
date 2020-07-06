@@ -11,7 +11,7 @@ To install, download or clone the repo, then:
 `npm install`
 `truffle compile`
 
-(Note: The code uses v0,6 of SafeMath.sol: https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-contracts/master/contracts/math/SafeMath.sol)
+(Note: The code uses v0.6 of SafeMath.sol: https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-contracts/master/contracts/math/SafeMath.sol)
 
 ## Develop Client
 
