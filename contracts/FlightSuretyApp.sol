@@ -228,11 +228,25 @@ contract FlightSuretyApp {
 
         emit OracleRequest(index, airline, flight, timestamp);
     }
+
+    // MSJ: For insured passenger to withdraw their eligible funds
+    event CreditsWithdrawn(address passenger, uint256 amount);
     
-    // MSJ: For insured passnenger to withdraw their eligible funds
     function withdrawFunds() public payable requireIsOperational 
     {
-        flightSuretyData.pay(msg.sender);
+        require(flightSuretyData.getPendingPayment(msg.sender) > 0, "Insufficient.");
+        
+        uint256 withdrawAmount;
+        withdrawAmount = flightSuretyData.pay(msg.sender);
+        
+        msg.sender.transfer(withdrawAmount);
+        emit CreditsWithdrawn(msg.sender, withdrawAmount);
+    }
+    
+    // MSJ: For insured passenger to get their balance
+    function getPassengerFunds() public payable requireIsOperational returns(uint)
+    {
+        return flightSuretyData.getPassengerFunds(msg.sender);
     }
     
     /********************************************************************************************/
@@ -370,7 +384,6 @@ contract FlightSuretyApp {
     {
         return keccak256(abi.encodePacked(airline, flight, timestamp));
     }
-
     
     // Returns array of three non-duplicating integers from 0-9
     function generateIndexes(address account) internal returns(uint8[3] memory) 
@@ -424,7 +437,9 @@ abstract contract FlightSuretyData {
     function registerFlight(string calldata flight, uint256 timestamp, address registerer) external virtual;
     function getRegisteredFlights() external virtual view returns(bytes32[] memory);
     function buy(address passenger, string calldata flight, address airline, uint256 timestamp, uint256 amount) external virtual payable returns(bool);
-    function pay(address passenger) external virtual payable;
+    function getPassengerFunds(address passenger) external virtual returns(uint);
+    function getPendingPayment(address passenger) external view virtual returns (uint256);
+    function pay(address passenger) external virtual payable returns(uint256);
     function getFlightStatusCode(bytes32 flightkey) external virtual view returns(uint8);
     function updateFlightStatusCode(bytes32 flightkey, uint8 statusCode) external virtual;
     function creditInsurees(address airline, string calldata flight, uint256 timestamp) external virtual; 
