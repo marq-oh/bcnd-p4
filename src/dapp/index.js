@@ -103,6 +103,14 @@ import './flightsurety.css';
                 console.log(error,result);
             });
         })
+
+        // Withdraw funds
+        DOM.elid('withdraw-funds-btn').addEventListener('click', () => {
+            // Write transaction
+            contract.withdraw((error, result) => {
+                console.log(error,result);
+            });
+        })
     });
     
 

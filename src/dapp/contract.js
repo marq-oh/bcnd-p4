@@ -131,4 +131,34 @@ export default class Contract {
       }      
     });
   }
+  authorizeCaller(appContract) {
+    let self = this;
+    let payload = {
+      appContract: appContract
+    }
+    
+    self.flightSuretyData.methods.authorizeCaller(config.appAddress).send({from: self.owner}, (error, result) => {
+      if(error) {
+        console.log(error);
+      } 
+      else {
+        alert('Success: ' + payload.appContract);
+        console.log("Configured authorized caller: " + payload.appContract);
+        console.log(payload);
+      }    
+    });
+  }
+  
+  withdraw(callback) {
+    let self = this;
+    self.flightSuretyApp.methods.withdrawFunds().send({from: self.owner}, (error, result) => {
+      if(error) {
+        console.log(error);
+      } 
+      else {
+        alert('Withdrawal successful');
+        console.log('Withdrawal successful');
+      }    
+    });
+  }
 }
