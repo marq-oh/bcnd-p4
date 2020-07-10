@@ -43,35 +43,33 @@
         </div>
 
         <div style="border: 1px solid #FFFFFF; padding:20px; margin-top:20px;">
+            <h4>FLIGHT</h4>
+            <div style="font-size:10px;">&nbsp;</div>
+            <label>
+                FETCH FLIGHT STATUS UPDATE [ Airline | Flight | Timestamp ]
+            </label>
+            <div class="form-group mb-2">
+                <select class="form-control" id="flight-status-update-dropdown">
+                </select>
+                <div style="font-size:5px;">&nbsp;</div>
+                <button class="btn-sm btn-primary" id="flight-status-update-btn" style="cursor:pointer;">FETCH</button>
+            </div>
+        </div> 
+        
+        <div style="border: 1px solid #FFFFFF; padding:20px; margin-top:20px;">
             <h4>PASSENGER</h4>
             <div style="font-size:10px;">&nbsp;</div>
             <label>
-                PURCHASE FLIGHT INSURANCE
+                PURCHASE FLIGHT INSURANCE [ Airline | Flight | Timestamp ]
             </label>
             <div class="form-group mb-2">
                 <select class="form-control" id="purchase-flight-insurance-dropdown">
-                    <!--<option value="Udacity Airlines|SFO-YVR|20200909">Udacity Airlines | SFO to YVR | Sep 9, 2020 @ 7pm PST</option>
-                    <option value="Air Udacity|LAX-JFK|20201010">Air Udacity | LAX to JFK | Oct 10, 2020 @ 11am PST</option>
-                    <option value="Trans-Udacity Airways|BWN-CGK|202011">Trans-Udacity Airways | BWN to CGK | Nov 11, 2020 @ 3am PST</option>-->
                 </select>
                 <div style="font-size:5px;">&nbsp;</div>
                 <input type="text" class="form-control" id="purchase-flight-funds" placeholder="Enter funds in ether" value="">
                 <div style="font-size:5px;">&nbsp;</div>
                 <button class="btn-sm btn-primary" id="purchase-flight-insurance-btn" style="cursor:pointer;">PURCHASE</button>
                 <div style="font-size:10px;">&nbsp;</div>
-            </div>
-
-            <label>
-                FLIGHT STATUS UPDATE
-            </label>
-            <div class="form-group mb-2">
-                <select class="form-control" id="flight-status-update-dropdown">
-                    <!--<option value="Udacity Airlines|SFO-YVR|20200909">Udacity Airlines | SFO to YVR | Sep 9, 2020 @ 7pm PST</option>
-                    <option value="Air Udacity|LAX-JFK|20201010">Air Udacity | LAX to JFK | Oct 10, 2020 @ 11am PST</option>
-                    <option value="Trans-Udacity Airways|BWN-CGK|202011">Trans-Udacity Airways | BWN to CGK | Nov 11, 2020 @ 3am PST</option>-->
-                </select>
-                <div style="font-size:5px;">&nbsp;</div>
-                <button class="btn-sm btn-primary" id="flight-status-update-btn" style="cursor:pointer;">UPDATE</button>
             </div>
             <div style="font-size:5px;">&nbsp;</div>
             <label>
@@ -80,7 +78,7 @@
             <div class="form-group mb-2">
                 <button class="btn-sm btn-primary" id="Withdraw-funds-btn" style="cursor:pointer;">WITHDRAW FUNDS</button>
             </div>
-        </div>   
+        </div> 
     </main>
 
 </body>

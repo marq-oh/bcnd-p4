@@ -279,17 +279,16 @@ contract('Flight Surety Tests', async (accounts) => {
     // console.log('Pending Payment:' + pendingPaymentAmount);
 
     // MSJ: Test payment / withdraw; Passenger has to go through pay process before receiving funds
-    try 
+    let eventEmitted = false;
+    var event = await config.flightSuretyApp.withdrawFunds({from: passenger, gasPrice: 0});
+    if(event)
     {
-      await config.flightSuretyApp.withdrawFunds({from: passenger, gasPrice: 0});
-    } 
-    catch (e) 
-    {
-      console.log(e);
+      eventEmitted = true;
     }
-
+    console.log(event);
+    console.log(eventEmitted);
     // MSJ: Assert: Amount Owned = PendingPayment
     assert.equal(amountOwed, pendingPaymentAmount, "Amount incorrect");
-
+    assert.equal(eventEmitted, true, 'Invalid event emitted');
   });
 });

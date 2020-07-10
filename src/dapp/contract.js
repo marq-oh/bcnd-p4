@@ -96,9 +96,7 @@ export default class Contract {
       amount: amount
     }
 
-    alert('Amount: ' + amount);
     const insuranceFee = self.web3.utils.toWei(amount, "ether"); 
-    alert('Insurance Fee: ' + insuranceFee);
 
     let purchasedInsurance = self.flightSuretyApp.methods.purchaseFlightInsurance(payload.flight, payload.airline, payload.timestamp).send({from: self.owner, value: insuranceFee, gas: 1000000}, (error, result) => {
       if(error) {
@@ -114,7 +112,7 @@ export default class Contract {
     });
   }
 
-  fetchFlightStatus(flight, airline, timestamp, callback) {
+  fetchFlightStatus(airline, flight, timestamp, callback) {
     let self = this;
     let payload = {
       airline: airline,
@@ -122,28 +120,15 @@ export default class Contract {
       timestamp: timestamp
     }
     
-    self.flightSuretyApp.methods.fetchFlightStatus(payload.airline, payload.flight, payload.timestamp).send({from: self.owner}, (error, result) => {
+    self.flightSuretyApp.methods.fetchFlightStatus(payload.airline, payload.flight, payload.timestamp).send({from: self.owner, gas: 1000000}, (error, result) => {
       if(error) {
         alert(error);
         console.log(error);
       } 
       else {
-        alert('Flight Status Update');
+        alert('Flight Status Updated');
         console.log(payload);
       }      
     });
   }
-
-  /*fetchFlightStatus(flight, airline, timestamp, callback) {
-    let self = this;
-    let payload = {
-      airline: self.airlines[0],
-      flight: flight,
-      timestamp: Math.floor(Date.now() / 1000)
-    }
-    
-    self.flightSuretyApp.methods.fetchFlightStatus(payload.airline, payload.flight, payload.timestamp).send({from: self.owner}, (error, result) => {
-      callback(error, payload);
-    });
-  }*/
 }

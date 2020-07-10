@@ -42,7 +42,7 @@ web3.eth.getAccounts().then((accounts) => {
   flightSuretyData.methods.authorizeCaller(config.appAddress)
      .send({from: accounts[0]})
      .then(result => {
-      console.log("FlightSuretyApp authorized");
+      console.log("FlightSuretyApp authorized: ", config.appAddress);
     })
     .catch(error => {
       console.log(error);

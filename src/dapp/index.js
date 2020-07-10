@@ -22,9 +22,21 @@ import './flightsurety.css';
         .then((list) => {
             DOM.elid('get-registered-funded-address').value = list;
         });
-  
+        
         // Pre-register Flights and add to Purchase Insurance dropdown
-        let preRegisteredFlights = ['SFO-YVR|20200831', 'LAX-JFK|20200831', 'BWN-CGK|20200831'];
+        let start = new Date();
+        let end = new Date(2022, 12, 31);
+
+        let timestamp1 = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+        timestamp1 = Number(timestamp1);
+
+        let timestamp2 = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+        timestamp2 = Number(timestamp2);
+        
+        let timestamp3 = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+        timestamp3 = Number(timestamp3);
+
+        let preRegisteredFlights = ['SFO-YVR|' + timestamp1, 'LAX-JFK|' + timestamp2, 'BWN-CGK|' + timestamp3];
         let flight;
 
         for (flight of preRegisteredFlights){
@@ -36,7 +48,7 @@ import './flightsurety.css';
                 console.log(error,result);
             })
             .then((registeredFlight) => {
-                // Populate two dropdowns
+                // Populate dropdowns
                 let flightDropDown = DOM.elid('purchase-flight-insurance-dropdown');
                 var option = document.createElement('option');
                 option.text = contract.owner + ' | ' + flightCode + ' | ' + timestamp;
@@ -82,12 +94,10 @@ import './flightsurety.css';
         DOM.elid('flight-status-update-btn').addEventListener('click', () => {
             let selectFlightDropDown2 = DOM.elid('flight-status-update-dropdown');
             var selectedFlight2 = selectFlightDropDown2.options[selectFlightDropDown2.selectedIndex].value;
-
             let selectedFlightSplit2 = selectedFlight2.split('|');
-            let airlineFltSts = selectedFlight2[0];
-            let flightCodeFltSts = selectedFlight2[1];
-            let timestampFltSts = selectedFlight2[2];
-
+            let airlineFltSts = selectedFlightSplit2[0];
+            let flightCodeFltSts = selectedFlightSplit2[1];
+            let timestampFltSts = selectedFlightSplit2[2];
             // Write transaction
             contract.fetchFlightStatus(airlineFltSts, flightCodeFltSts, timestampFltSts, (error, result) => {
                 console.log(error,result);

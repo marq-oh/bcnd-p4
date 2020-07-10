@@ -200,7 +200,7 @@ contract FlightSuretyData {
     }
 
     // MSJ: Get list of registered flights
-    function getRegisteredFlights() external view returns(bytes32[] memory) 
+    function getRegisteredFlights() external view returns(bytes32[] memory)
     {
         return registeredFlights;
     }
