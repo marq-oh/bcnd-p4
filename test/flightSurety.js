@@ -285,8 +285,8 @@ contract('Flight Surety Tests', async (accounts) => {
     {
       eventEmitted = true;
     }
-    console.log(event);
-    console.log(eventEmitted);
+    // console.log(event);
+    // console.log(eventEmitted);
     // MSJ: Assert: Amount Owned = PendingPayment
     assert.equal(amountOwed, pendingPaymentAmount, "Amount incorrect");
     assert.equal(eventEmitted, true, 'Invalid event emitted');
