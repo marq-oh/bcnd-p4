@@ -94,7 +94,6 @@ contract FlightSuretyData {
     event FlightRegistered(bytes32 flightKey, string flight, uint256 timestamp, address registerer);
     event InsurancePurchased(address passenger, bytes32 flightKey, string flight, address airline, uint256 timestamp);
     event InsureeCredited(address passenger, uint256 amount);
-    event CreditsWithdrawn(address passenger, uint256 amount);
 
     /********************************************************************************************/
     /*                                       CONSTRUCTOR                                        */
@@ -379,17 +378,21 @@ contract FlightSuretyData {
         return true;
     }
 
-    function pay(address payable passenger) external requireIsOperational requireIsCallerAuthorized
+    function pay(address payable passenger) external payable requireIsOperational requireIsCallerAuthorized returns(uint256)
     {
-        require(pendingPaymentsFlightKeyPassengers[pendingPaymentPassenger[passenger]].isPaid == false, "No eligible credits");
+        require(pendingPaymentsFlightKeyPassengers[pendingPaymentPassenger[passenger]].isPaid == false, "No eligible for credit");
 
         uint256 amount = pendingPaymentsFlightKeyPassengers[pendingPaymentPassenger[passenger]].amount;
         
         pendingPaymentsFlightKeyPassengers[pendingPaymentPassenger[passenger]].isPaid == true;
         pendingPaymentsFlightKeyPassengers[pendingPaymentPassenger[passenger]].amount == 0;
         
-        passenger.transfer(amount);
-        emit CreditsWithdrawn(passenger, amount);
+        return amount;
+    }
+    
+    function getPassengerFunds(address passenger) external view returns(uint) 
+    {
+        return passenger.balance;
     }
     
     // MSJ: Function to fund contract
