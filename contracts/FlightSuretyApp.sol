@@ -195,6 +195,7 @@ contract FlightSuretyApp {
         require(msg.value == AIRLINE_REG_FEE, "Invalid funds submitted. Please submit required airline registration fee.");
                
         // MSJ: Submit funding
+        // address(uint160(address(flightSuretyData))).transfer(msg.value);
         flightSuretyData.submitAirlineFunding{value: msg.value}(msg.sender);
     }
     
@@ -232,16 +233,25 @@ contract FlightSuretyApp {
     // MSJ: For insured passenger to withdraw their eligible funds
     event CreditsWithdrawn(address passenger, uint256 amount);
     
-    function withdrawFunds() public payable requireIsOperational 
+    function withdrawFunds() public requireIsOperational 
     {
         require(flightSuretyData.getPendingPayment(msg.sender) > 0, "Insufficient.");
         
         uint256 withdrawAmount;
         withdrawAmount = flightSuretyData.pay(msg.sender);
         
-        msg.sender.transfer(withdrawAmount);
+        address payable to = msg.sender;
+        
+        to.transfer(withdrawAmount);
         emit CreditsWithdrawn(msg.sender, withdrawAmount);
     }
+    
+    // MSJ: Get Contract Balanve
+    function getContractBalance() public requireIsOperational returns(uint)
+    {
+        return flightSuretyData.getContractBalance();
+    }
+    
     
     // MSJ: For insured passenger to get their balance
     function getPassengerFunds() public payable requireIsOperational returns(uint)
@@ -438,8 +448,9 @@ abstract contract FlightSuretyData {
     function getRegisteredFlights() external virtual view returns(bytes32[] memory);
     function buy(address passenger, string calldata flight, address airline, uint256 timestamp, uint256 amount) external virtual payable returns(bool);
     function getPassengerFunds(address passenger) external virtual returns(uint);
+    function getContractBalance() external virtual returns(uint);
     function getPendingPayment(address passenger) external view virtual returns (uint256);
-    function pay(address passenger) external virtual payable returns(uint256);
+    function pay(address passenger) external virtual returns(uint256);
     function getFlightStatusCode(bytes32 flightkey) external virtual view returns(uint8);
     function updateFlightStatusCode(bytes32 flightkey, uint8 statusCode) external virtual;
     function creditInsurees(address airline, string calldata flight, uint256 timestamp) external virtual; 

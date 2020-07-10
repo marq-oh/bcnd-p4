@@ -378,7 +378,7 @@ contract FlightSuretyData {
         return true;
     }
 
-    function pay(address payable passenger) external payable requireIsOperational requireIsCallerAuthorized returns(uint256)
+    function pay(address passenger) external view requireIsOperational requireIsCallerAuthorized returns(uint256)
     {
         require(pendingPaymentsFlightKeyPassengers[pendingPaymentPassenger[passenger]].isPaid == false, "No eligible for credit");
 
@@ -393,6 +393,11 @@ contract FlightSuretyData {
     function getPassengerFunds(address passenger) external view returns(uint) 
     {
         return passenger.balance;
+    }
+    
+    function getContractBalance() external view returns(uint) 
+    {
+        return address(this).balance;
     }
     
     // MSJ: Function to fund contract
