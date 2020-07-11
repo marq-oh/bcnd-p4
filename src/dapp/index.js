@@ -146,7 +146,7 @@ import './flightsurety.css';
                 console.log(error,result);
             })
             .then((pendingPayments) => {
-                DOM.elid('get-pending-payments-field').value = balanceData;
+                DOM.elid('get-pending-payments-field').value = pendingPayments;
             });
         })
 

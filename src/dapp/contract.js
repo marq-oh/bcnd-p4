@@ -102,8 +102,7 @@ export default class Contract {
 
   getPendingPayment(passenger, callback) {
     let self = this;
-    alert(passenger);
-    let pendingPaymentsData = self.flightSuretyData.methods.getPendingPayment(passenger).call({from: passenger, gas: 1000000}, callback);
+    let pendingPaymentsData = self.flightSuretyData.methods.getPendingPayment(passenger).call({from: passenger, gas: 5000000}, callback);
     console.log('Pending Payments: ' + pendingPaymentsData);
     return pendingPaymentsData;
   }

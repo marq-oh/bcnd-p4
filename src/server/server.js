@@ -39,6 +39,7 @@ function getRandomStatusCode(statusCodeArr) {
 let oracles = [];
 
 web3.eth.getAccounts().then((accounts) => { 
+  console.log("FlightSuretyData: ", config.dataAddress);
   flightSuretyData.methods.authorizeCaller(config.appAddress)
      .send({from: accounts[0]})
      .then(result => {
