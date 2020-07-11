@@ -38,7 +38,6 @@ export default class Contract {
     let operationalStatus = self.flightSuretyApp.methods.isOperational().call({from: self.owner}, callback);
     return operationalStatus;
   }
-
   
   authorizeCaller(appContract) {
     let self = this;
@@ -57,11 +56,62 @@ export default class Contract {
       }    
     });
   }
+
+  registerAirline(airline) {
+    let self = this;
+    let payload = {
+      airline: airline
+    }
+    
+    self.flightSuretyApp.methods.registerAirline(airline).send({from: self.owner}, (error, result) => {
+      if(error) {
+        console.log(error);
+      } 
+      else {
+        alert('Registered: ' + payload.airline);
+        console.log('Registered: ' + payload.airline);
+        console.log(payload);
+      }    
+    });
+  }
   
+  submitFunding(airline, funds) {
+    let self = this;
+    const regFunds = self.web3.utils.toWei(funds, "ether"); 
+
+    let fundedAirline = self.flightSuretyApp.methods.submitFunding().send({from: airline, value: regFunds, gas: 1000000}, (error, result) => {
+      if(error) {
+        alert(error);
+        console.log(error);
+      } 
+      else {
+        alert('Funded Airline: ' + airline);
+        console.log('Funded Airline: ' + airline);
+
+      }    
+    });
+
+  } 
+
+  getContractBalance(callback) {
+    let self = this;
+    let contractBalance = self.flightSuretyData.methods.getContractBalance().call({from: self.owner}, callback);
+    console.log('Contract Balance: ' + contractBalance);
+    return contractBalance;
+  }
+
+  getPendingPayment(passenger, callback) {
+    let self = this;
+    alert(passenger);
+    let pendingPaymentsData = self.flightSuretyData.methods.getPendingPayment(passenger).call({from: passenger, gas: 1000000}, callback);
+    console.log('Pending Payments: ' + pendingPaymentsData);
+    return pendingPaymentsData;
+  }
 
   getRegisteredFunded(callback) {
     let self = this;
     let registeredFunded = self.flightSuretyData.methods.getAirlinesRegisteredFunded().call({from: self.owner}, callback);
+    console.log('Registered + Funded: ' + registeredFunded);
     return registeredFunded;
   }
 
@@ -87,26 +137,48 @@ export default class Contract {
     return flightRegistered;  
   }
 
-  purchaseFlightInsurance(flight, airline, timestamp, amount, callback) {
+  purchaseFlightInsurance(flight, airline, timestamp, amount, passenger, callback) {
     let self = this;
     let payload = {
       flight: flight,
       airline: airline,
       timestamp: timestamp,
-      amount: amount
+      amount: amount,
+      passenger: passenger
     }
 
     const insuranceFee = self.web3.utils.toWei(amount, "ether"); 
 
-    let purchasedInsurance = self.flightSuretyApp.methods.purchaseFlightInsurance(payload.flight, payload.airline, payload.timestamp).send({from: self.owner, value: insuranceFee, gas: 1000000}, (error, result) => {
+    let purchasedInsurance = self.flightSuretyApp.methods.purchaseFlightInsurance(payload.flight, payload.airline, payload.timestamp).send({from: payload.passenger, value: insuranceFee, gas: 1000000}, (error, result) => {
       if(error) {
         alert(error);
         console.log(error);
       } 
       else {
-        alert('Insurance Purchased: ' + payload.flight + " | " + payload.airline + " | " + payload.timestamp + " | " + payload.amount);
-        console.log("Insurance Purchased: " + payload.flight + " | " + payload.airline + " | " + payload.timestamp + " | " + payload.amount);
+        alert('Insurance Purchased: ' + payload.flight + " | " + payload.airline + " | " + payload.timestamp + " | " + payload.amount + " | " + payload.passenger);
+        console.log("Insurance Purchased: " + payload.flight + " | " + payload.airline + " | " + payload.timestamp + " | " + payload.amount + " | " + payload.passenger);
         console.log(payload);
+        
+      }    
+    });
+  }
+
+  testProcessFlightStatus(flight, airline, timestamp, callback) {
+    let self = this;
+    let payload = {
+      flight: flight,
+      airline: airline,
+      timestamp: timestamp
+    }
+
+    let processedFlightStatus = self.flightSuretyApp.methods.processFlightStatus(payload.airline, payload.flight, payload.timestamp, 20).send({from: self.owner, gas: 1000000}, (error, result) => {
+      if(error) {
+        alert(error);
+        console.log(error);
+      } 
+      else {
+        alert('Test Process Flight Status succeeded');
+        console.log('Test Process Flight Status succeeded');
         
       }    
     });
@@ -149,9 +221,9 @@ export default class Contract {
     });
   }
   
-  withdraw(callback) {
+  withdraw(passenger, callback) {
     let self = this;
-    self.flightSuretyApp.methods.withdrawFunds().send({from: self.owner}, (error, result) => {
+    self.flightSuretyApp.methods.withdrawFunds().send({from: passenger, gas: 1000000}, (error, result) => {
       if(error) {
         console.log(error);
       } 

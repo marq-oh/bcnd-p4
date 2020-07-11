@@ -60,14 +60,61 @@ import './flightsurety.css';
                 option2.text = contract.owner + ' | ' + flightCode + ' | ' + timestamp;
                 option2.value = contract.owner + '|' + flightCode + '|' + timestamp;
                 flightDropDown2.add(option2, 0);
+
+                let flightDropDown3 = DOM.elid('process-flight-status-update-dropdown');
+                var option3 = document.createElement('option');
+                option3.text = contract.owner + ' | ' + flightCode + ' | ' + timestamp;
+                option3.value = contract.owner + '|' + flightCode + '|' + timestamp;
+                flightDropDown3.add(option3, 0);
             });
         }
+
+        // Get Registered + Funded
+        DOM.elid('get-registered-funded-btn').addEventListener('click', () => {
+            let list2 = contract.getRegisteredFunded((error, result) => {
+                console.log(error,result);
+            })
+            .then((list2) => {
+                DOM.elid('get-registered-funded-address').value = list2;
+            });
+        })
+
+        // Get Contract Balance
+        DOM.elid('get-contract-balance-btn').addEventListener('click', () => {
+            let balanceData = contract.getContractBalance((error, result) => {
+                console.log(error,result);
+            })
+            .then((balanceData) => {
+                DOM.elid('get-contract-balance-field').value = balanceData;
+            });
+        })
 
         // Authorize Caller
         DOM.elid('authorize-caller-btn').addEventListener('click', () => {
             let appContract = DOM.elid('authorize-caller-address').value;
             // Write transaction
             contract.authorizeCaller(appContract, (error, result) => {
+                console.log(error,result);
+            });
+        })
+
+        // Register Airline
+        DOM.elid('register-airline-btn').addEventListener('click', () => {
+            let registerAirlineAddress = DOM.elid('register-airline-address').value;
+
+            // Write transaction
+            contract.registerAirline(registerAirlineAddress, (error, result) => {
+                console.log(error,result);
+            });
+        })
+
+        // Submit Funding
+        DOM.elid('submit-funding-btn').addEventListener('click', () => {
+            let registrationFund = DOM.elid('submit-funding-field').value;
+            let airlineToFund = DOM.elid('submit-funding-airline').value;
+
+            // Write transaction
+            contract.submitFunding(airlineToFund, registrationFund, (error, result) => {
                 console.log(error,result);
             });
         })
@@ -83,9 +130,38 @@ import './flightsurety.css';
             let timestampIns = selectedFlightSplit[2];
 
             var submittedEther = DOM.elid('purchase-flight-funds').value;
+            var passengerToInsure = DOM.elid('purchase-flight-insurance-passenger').value;
 
             // Write transaction
-            contract.purchaseFlightInsurance(flightCodeIns, airlineIns, timestampIns, submittedEther, (error, result) => {
+            contract.purchaseFlightInsurance(flightCodeIns, airlineIns, timestampIns, submittedEther, passengerToInsure, (error, result) => {
+                console.log(error,result);
+            });
+        })
+
+        // Get Pending Payments
+        DOM.elid('get-pending-payments-btn').addEventListener('click', () => {
+            let pendingPaymentsPassengerAddress = DOM.elid('get-pending-payments-passenger').value;
+            
+            let pendingPayments = contract.getPendingPayment(pendingPaymentsPassengerAddress, (error, result) => {
+                console.log(error,result);
+            })
+            .then((pendingPayments) => {
+                DOM.elid('get-pending-payments-field').value = balanceData;
+            });
+        })
+
+        // Test Process Flight Status
+        DOM.elid('process-flight-status-update-btn').addEventListener('click', () => {
+            let selectFlightDropDown3 = DOM.elid('process-flight-status-update-dropdown');
+            var selectedFlight3 = selectFlightDropDown3.options[selectFlightDropDown3.selectedIndex].value;
+
+            let selectedFlightSplit3 = selectedFlight3.split('|');
+            let testAirline = selectedFlightSplit3[0];
+            let testFlightCode = selectedFlightSplit3[1];
+            let testTimestamp = selectedFlightSplit3[2];
+
+            // Write transaction
+            contract.testProcessFlightStatus(testFlightCode, testAirline, testTimestamp, (error, result) => {
                 console.log(error,result);
             });
         })
@@ -106,8 +182,10 @@ import './flightsurety.css';
 
         // Withdraw funds
         DOM.elid('withdraw-funds-btn').addEventListener('click', () => {
+            let withdrawPassenger = DOM.elid('withdraw-passenger-address').value;
+
             // Write transaction
-            contract.withdraw((error, result) => {
+            contract.withdraw(withdrawPassenger, (error, result) => {
                 console.log(error,result);
             });
         })

@@ -31,16 +31,56 @@
                 <input type="text" class="form-control" id="authorize-caller-address" placeholder="Enter address to authorize" value="">
                 <div style="font-size:5px;">&nbsp;</div>
                 <button class="btn-sm btn-primary" id="authorize-caller-btn" style="cursor:pointer;">AUTHORIZE</button>
-                <div style="font-size:5px;">&nbsp;</div>
             </div>
-
+            <div style="font-size:5px;">&nbsp;</div>
             <label>GET REGISTERED + FUNDED AIRLINES</label>
             <div class="form-group mb-2">
-                <textarea class="form-control" id="get-registered-funded-address" rows="5"></textarea>
+                <textarea class="form-control" id="get-registered-funded-address" rows="5" readonly></textarea>
                 <div style="font-size:5px;">&nbsp;</div>
                 <button class="btn-sm btn-primary" id="get-registered-funded-btn" style="cursor:pointer;">GET AIRLINES</button >
             </div>
+            <div style="font-size:5px;">&nbsp;</div>
+            <label>GET CONTRACT BALANCE</label>
+            <div class="form-group mb-2">
+                <input type="text" class="form-control" id="get-contract-balance-field" placeholder="Contract Balance" value="" readonly>
+                <div style="font-size:5px;">&nbsp;</div>
+                <button class="btn-sm btn-primary" id="get-contract-balance-btn" style="cursor:pointer;">GET BALANCE</button >
+            </div>
+            <div style="font-size:5px;">&nbsp;</div>
+            <label>TEST PROCESS FLIGHT STATUS (for late airline status code)</label>
+            <div class="form-group mb-2">
+                <select class="form-control" id="process-flight-status-update-dropdown">
+                </select>                
+                <div style="font-size:5px;">&nbsp;</div>
+                <button class="btn-sm btn-primary" id="process-flight-status-update-btn" style="cursor:pointer;">PROCESS FLIGHT STATUS</button >
+            </div>
         </div>
+
+        <div style="border: 1px solid #FFFFFF; padding:20px; margin-top:20px;">
+            <h4>AIRLINE</h4>
+            <div style="font-size:10px;">&nbsp;</div>
+            <label>
+                REGISTER AIRLINE
+            </label>
+            <div class="form-group mb-2">
+                <input type="text" class="form-control" id="register-airline-address" placeholder="Enter address to register" value="">
+                <div style="font-size:5px;">&nbsp;</div>
+                <button class="btn-sm btn-primary" id="register-airline-btn" style="cursor:pointer;">REGISTER</button>
+                <div style="font-size:5px;">&nbsp;</div>
+            </div>
+            <div style="font-size:5px;">&nbsp;</div>
+            <label>
+                SUBMIT FUNDING
+            </label>
+            <div class="form-group mb-2">
+                <input type="text" class="form-control" id="submit-funding-airline" placeholder="Enter address to register" value="">
+                <div style="font-size:5px;">&nbsp;</div>
+                <input type="text" class="form-control" id="submit-funding-field" placeholder="Enter 10 ether" value="">
+                <div style="font-size:5px;">&nbsp;</div>
+                <button class="btn-sm btn-primary" id="submit-funding-btn" style="cursor:pointer;">SBUMIT</button>
+                <div style="font-size:5px;">&nbsp;</div>
+            </div>
+        </div> 
 
         <div style="border: 1px solid #FFFFFF; padding:20px; margin-top:20px;">
             <h4>FLIGHT</h4>
@@ -66,16 +106,28 @@
                 <select class="form-control" id="purchase-flight-insurance-dropdown">
                 </select>
                 <div style="font-size:5px;">&nbsp;</div>
+                <input type="text" class="form-control" id="purchase-flight-insurance-passenger" placeholder="Enter address of passenger" value="">
+                <div style="font-size:5px;">&nbsp;</div>
                 <input type="text" class="form-control" id="purchase-flight-funds" placeholder="Enter funds in ether" value="">
                 <div style="font-size:5px;">&nbsp;</div>
                 <button class="btn-sm btn-primary" id="purchase-flight-insurance-btn" style="cursor:pointer;">PURCHASE</button>
-                <div style="font-size:10px;">&nbsp;</div>
+            </div>
+            <div style="font-size:5px;">&nbsp;</div>
+            <label>GET PENDING PAYMENTS</label>
+            <div class="form-group mb-2">
+                <input type="text" class="form-control" id="get-pending-payments-passenger" placeholder="Enter address of passenger" value="">
+                <div style="font-size:5px;">&nbsp;</div>
+                <input type="text" class="form-control" id="get-pending-payments-field" placeholder="Pending Payments" value="" readonly>
+                <div style="font-size:5px;">&nbsp;</div>
+                <button class="btn-sm btn-primary" id="get-pending-payments-btn" style="cursor:pointer;">GET PENDING PAYMENTS</button >
             </div>
             <div style="font-size:5px;">&nbsp;</div>
             <label>
                 WITHDRAW FUNDS
             </label>
             <div class="form-group mb-2">
+                <input type="text" class="form-control" id="withdraw-passenger-address" placeholder="Enter address of passenger" value="">
+                <div style="font-size:5px;">&nbsp;</div>
                 <button class="btn-sm btn-primary" id="withdraw-funds-btn" style="cursor:pointer;">WITHDRAW FUNDS</button>
             </div>
         </div> 
