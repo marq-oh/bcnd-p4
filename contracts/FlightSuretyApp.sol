@@ -239,10 +239,8 @@ contract FlightSuretyApp {
         
         uint256 withdrawAmount;
         withdrawAmount = flightSuretyData.pay(msg.sender);
-        
-        address payable to = msg.sender;
-        
-        to.transfer(withdrawAmount);
+                
+        msg.sender.transfer(withdrawAmount);
         emit CreditsWithdrawn(msg.sender, withdrawAmount);
     }
     
@@ -450,7 +448,7 @@ abstract contract FlightSuretyData {
     function getPassengerFunds(address passenger) external virtual returns(uint);
     function getContractBalance() external virtual returns(uint);
     function getPendingPayment(address passenger) external view virtual returns (uint256);
-    function pay(address passenger) external virtual returns(uint256);
+    function pay(address passenger) external payable virtual returns(uint256);
     function getFlightStatusCode(bytes32 flightkey) external virtual view returns(uint8);
     function updateFlightStatusCode(bytes32 flightkey, uint8 statusCode) external virtual;
     function creditInsurees(address airline, string calldata flight, uint256 timestamp) external virtual; 

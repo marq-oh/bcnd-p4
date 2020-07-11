@@ -378,14 +378,14 @@ contract FlightSuretyData {
         return true;
     }
 
-    function pay(address passenger) external view requireIsOperational requireIsCallerAuthorized returns(uint256)
+    function pay(address passenger) external payable requireIsOperational requireIsCallerAuthorized returns(uint256)
     {
         require(pendingPaymentsFlightKeyPassengers[pendingPaymentPassenger[passenger]].isPaid == false, "No eligible for credit");
 
         uint256 amount = pendingPaymentsFlightKeyPassengers[pendingPaymentPassenger[passenger]].amount;
         
-        pendingPaymentsFlightKeyPassengers[pendingPaymentPassenger[passenger]].isPaid == true;
-        pendingPaymentsFlightKeyPassengers[pendingPaymentPassenger[passenger]].amount == 0;
+        pendingPaymentsFlightKeyPassengers[pendingPaymentPassenger[passenger]].isPaid = true;
+        pendingPaymentsFlightKeyPassengers[pendingPaymentPassenger[passenger]].amount = 0;
         
         return amount;
     }
